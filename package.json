@@ -1,8 +1,8 @@
 {
-  "name": "zrp-rick-and-morty-challenge",
+  "name": "rick-and-morty-challenge",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo do desafio tecnico ZRP/Boticario com API Node.js e cliente Flutter.",
+  "description": "Monorepo do desafio tecnico com API Node.js e cliente Flutter.",
   "scripts": {
     "dev:api": "npm --prefix apps/api run dev",
     "build:api": "npm --prefix apps/api run build",

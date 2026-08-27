@@ -1,0 +1,63 @@
+# API
+
+Base local: `http://localhost:3000/api/v1`
+
+## `GET /episodes`
+
+Lista episodios paginados.
+
+Query params:
+
+- `page`: numero positivo, padrao `1`.
+- `name`: filtro opcional repassado para a Rick and Morty API.
+- `episode`: filtro opcional por codigo, exemplo `S03E07`.
+
+## `GET /episodes/:id`
+
+Retorna episodio e personagens participantes.
+
+Query params:
+
+- `sortCharactersBy`: `name`, `id`, `status` ou `species`. Padrao `name`.
+- `characterOrder`: `asc` ou `desc`. Padrao `asc`.
+
+Exemplo:
+
+```bash
+curl "http://localhost:3000/api/v1/episodes/28?sortCharactersBy=name&characterOrder=asc"
+```
+
+## `POST /analytics/events`
+
+Recebe eventos do app.
+
+Eventos aceitos:
+
+- `app_opened`
+- `episode_list_viewed`
+- `episode_details_viewed`
+- `character_sort_changed`
+
+```json
+{
+  "name": "episode_details_viewed",
+  "properties": {
+    "episodeId": 28,
+    "sortBy": "name"
+  }
+}
+```
+
+## Erros
+
+Erros seguem o formato:
+
+```json
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "id must be a positive integer",
+    "details": {}
+  }
+}
+```
