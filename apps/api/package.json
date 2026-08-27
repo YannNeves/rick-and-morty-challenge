@@ -1,5 +1,5 @@
 {
-  "name": "@zrp-rick-and-morty/api",
+  "name": "@rick-and-morty/api",
   "version": "1.0.0",
   "description": "API Node.js para integrar Rick and Morty API com clientes web/mobile.",
   "main": "dist/main.js",
