@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: Rick and Morty Challenge API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/v1
+paths:
+  /episodes:
+    get:
+      summary: List episodes
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: episode
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Episode page
+  /episodes/{id}:
+    get:
+      summary: Get episode details with sorted characters
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: sortCharactersBy
+          schema:
+            type: string
+            enum: [name, id, status, species]
+            default: name
+        - in: query
+          name: characterOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        "200":
+          description: Episode details
+        "400":
+          description: Invalid request
+        "404":
+          description: Episode not found
+  /analytics/events:
+    post:
+      summary: Track app analytics event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  enum:
+                    - app_opened
+                    - episode_list_viewed
+                    - episode_details_viewed
+                    - character_sort_changed
+                properties:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "202":
+          description: Event accepted
