@@ -1,0 +1,21 @@
+{
+  "name": "zrp-rick-and-morty-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo do desafio tecnico ZRP/Boticario com API Node.js e cliente Flutter.",
+  "scripts": {
+    "dev:api": "npm --prefix apps/api run dev",
+    "build:api": "npm --prefix apps/api run build",
+    "start:api": "npm --prefix apps/api run start",
+    "test:api": "npm --prefix apps/api run test",
+    "lint:api": "npm --prefix apps/api run lint",
+    "mobile:analyze": "cd apps/mobile && fvm flutter analyze",
+    "mobile:test": "cd apps/mobile && fvm flutter test",
+    "mobile:run:web": "cd apps/mobile && fvm flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v1",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
