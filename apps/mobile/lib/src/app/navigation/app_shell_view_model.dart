@@ -12,6 +12,7 @@ class AppShellViewModel extends ChangeNotifier {
   void selectDestination(int index) {
     if (_selectedIndex == index) return;
     _selectedIndex = index;
+    _searchQuery = '';
     notifyListeners();
   }
 

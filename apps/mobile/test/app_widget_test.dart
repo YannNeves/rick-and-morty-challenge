@@ -77,6 +77,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Busque por episódio'), findsOneWidget);
+    expect(find.byKey(const ValueKey('episodes-page-list')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'S01E02',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('A Episode'), findsOneWidget);
+    expect(find.text('Z Episode'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Unknown',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('episodes-no-search-results')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Personagens'));
     await tester.pumpAndSettle();
