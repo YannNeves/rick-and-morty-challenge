@@ -8,8 +8,10 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:coverage": "node --import tsx --experimental-test-coverage --test-coverage-include='src/**/*.ts' --test-coverage-exclude='src/**/*.test.ts' --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=80 --test \"src/**/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "npm run typecheck"
+    "lint": "oxlint src --deny-warnings && npm run typecheck",
+    "openapi:lint": "redocly lint ../../docs/openapi.yaml --extends=minimal"
   },
   "keywords": [],
   "author": "Yann Neves",
@@ -19,9 +21,10 @@
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@redocly/cli": "^2.49.0",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.3",
-    "nodemon": "^3.1.14",
+    "oxlint": "^1.80.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }

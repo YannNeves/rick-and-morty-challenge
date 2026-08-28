@@ -26,6 +26,16 @@ void main() {
       'characterOrder': 'asc',
     });
   });
+
+  test('RemoteEpisodeRepository requests all episodes once', () async {
+    final client = FakeApiClient();
+    final repository = RemoteEpisodeRepository(client);
+
+    await repository.getAllEpisodes();
+
+    expect(client.lastPath, '/episodes/all');
+    expect(client.lastQuery, isNull);
+  });
 }
 
 class FakeApiClient implements ApiClient {
@@ -60,10 +70,4 @@ class FakeApiClient implements ApiClient {
       'characters': <Map<String, dynamic>>[],
     };
   }
-
-  @override
-  Future<void> postMap(
-    String path, {
-    required Map<String, dynamic> body,
-  }) async {}
 }

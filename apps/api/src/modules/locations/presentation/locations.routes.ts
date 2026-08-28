@@ -10,6 +10,7 @@ export const createLocationsRouter = (gateway: LocationsGateway & LocationCharac
   const controller = new LocationsController(new LocationService(gateway, gateway));
 
   router.get("/", asyncHandler(controller.list));
+  router.get("/all", asyncHandler(controller.all));
   router.get("/batch", asyncHandler(controller.batch));
   router.get("/:id", asyncHandler(controller.details));
 

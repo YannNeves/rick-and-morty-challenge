@@ -1,42 +1,381 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rick_and_morty_challenge/src/app/app.dart';
+import 'package:rick_and_morty_challenge/src/features/characters/data/character_repository.dart';
+import 'package:rick_and_morty_challenge/src/features/characters/domain/character_models.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/data/episode_repository.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/domain/character_sort.dart';
-import 'package:rick_and_morty_challenge/src/features/episodes/domain/episode_models.dart';
+import 'package:rick_and_morty_challenge/src/features/episodes/domain/episode_models.dart'
+    hide CharacterSummary;
+import 'package:rick_and_morty_challenge/src/features/locations/data/location_repository.dart';
+import 'package:rick_and_morty_challenge/src/features/locations/domain/location_models.dart';
 
 void main() {
-  testWidgets('shows episodes and opens character details', (tester) async {
+  testWidgets('shows home episodes and navigates between destinations', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      RickAndMortyApp(episodeRepository: FakeEpisodeRepository()),
+      RickAndMortyApp(
+        characterRepository: FakeCharacterRepository(),
+        episodeRepository: FakeEpisodeRepository(),
+        locationRepository: FakeLocationRepository(),
+      ),
     );
-
     await tester.pumpAndSettle();
 
-    expect(find.text('Pilot'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('episodes-section-title')),
+      findsOneWidget,
+    );
+    expect(find.text('A Episode | S01E02'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('locations-section-title')),
+      findsOneWidget,
+    );
+    expect(find.text('Earth (C-137)'), findsNWidgets(2));
+    expect(
+      find.byKey(const ValueKey('characters-section-title')),
+      findsOneWidget,
+    );
+    expect(find.text('Rick Sanchez'), findsOneWidget);
+    expect(find.byKey(const ValueKey('global-search-field')), findsNothing);
 
-    await tester.tap(find.text('Pilot'));
+    final locationLearnMore =
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('home-locations-list')),
+              matching: find.text('Saiba mais'),
+            )
+            .first;
+    await tester.ensureVisible(locationLearnMore);
+    await tester.pumpAndSettle();
+    await tester.tap(locationLearnMore);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('location-details-page')), findsOneWidget);
+    expect(find.text('Residentes'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    final locationsHeader =
+        find
+            .ancestor(
+              of: find.byKey(const ValueKey('locations-section-title')),
+              matching: find.byType(Row),
+            )
+            .first;
+    final locationsShowAll = find.descendant(
+      of: locationsHeader,
+      matching: find.text('Ver todos'),
+    );
+    await tester.ensureVisible(locationsShowAll);
+    await tester.pumpAndSettle();
+    await tester.tap(locationsShowAll);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('locations-page-list')), findsOneWidget);
+    expect(find.byKey(const ValueKey('global-search-field')), findsOneWidget);
+    expect(find.text('Busque por localização'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Citadel',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('locations-no-search-results')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Earth',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Earth (C-137)'), findsOneWidget);
+
+    await tester.tap(find.text('Earth (C-137)'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('location-details-page')), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Localização'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('locations-page-list')), findsOneWidget);
+
+    await tester.tap(find.text('Episódios'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Busque por episódio'), findsOneWidget);
+    expect(find.byKey(const ValueKey('episodes-page-list')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'S01E02',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('A Episode'), findsOneWidget);
+    expect(find.text('Z Episode'), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Unknown',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('episodes-no-search-results')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Personagens'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Busque por personagem'), findsOneWidget);
+    expect(find.byKey(const ValueKey('characters-page-list')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('open-filters-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Status'), findsWidgets);
+    expect(find.text('Espécie'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Limpar filtros'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Rick',
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 351));
     await tester.pumpAndSettle();
 
     expect(find.text('Rick Sanchez'), findsOneWidget);
-    expect(find.text('Nome'), findsOneWidget);
+
+    final rickCardTitle = find.text('Rick Sanchez');
+    await tester.ensureVisible(rickCardTitle);
+    await tester.pumpAndSettle();
+    await tester.tap(rickCardTitle);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('character-details-page')),
+      findsOneWidget,
+    );
+    final characterDetailsScroll = find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable && widget.axisDirection == AxisDirection.down,
+    );
+    await tester.drag(
+      find.byKey(const ValueKey('character-details-page')),
+      const Offset(0, -400),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Origem'), findsOneWidget);
+    expect(find.text('Localização atual'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Episódios'),
+      300,
+      scrollable: characterDetailsScroll,
+    );
+    expect(find.text('Episódios'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Morty',
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 351));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('characters-no-search-results')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('toggles between dark and light themes', (tester) async {
+    await tester.pumpWidget(
+      RickAndMortyApp(
+        characterRepository: FakeCharacterRepository(),
+        episodeRepository: FakeEpisodeRepository(),
+        locationRepository: FakeLocationRepository(),
+      ),
+    );
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('theme-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.light,
+    );
   });
 }
 
-class FakeEpisodeRepository implements EpisodeRepository {
+class FakeCharacterRepository implements CharacterRepository {
   @override
-  Future<EpisodeListPage> getEpisodes({int page = 1}) async {
-    return EpisodeListPage(
+  Future<CharacterDetails> getCharacterDetails(int id) async {
+    return const CharacterDetails(
+      id: 1,
+      name: 'Rick Sanchez',
+      status: 'Alive',
+      species: 'Human',
+      type: '',
+      gender: 'Male',
+      image: 'https://example.com/rick.png',
+      origin: CharacterReference(id: 1, name: 'Earth (C-137)'),
+      location: CharacterReference(id: 1, name: 'Earth (C-137)'),
+      episodeCount: 2,
+      episodeIds: [1, 2],
+    );
+  }
+
+  @override
+  Future<CharacterListPage> getCharacters({
+    int page = 1,
+    String? name,
+    String? status,
+    String? species,
+  }) async {
+    final matchesName =
+        name == null ||
+        'Rick Sanchez'.toLowerCase().contains(name.toLowerCase());
+    return CharacterListPage(
       page: page,
       totalPages: 1,
       totalItems: 1,
       hasNextPage: false,
       hasPreviousPage: false,
+      characters:
+          matchesName
+              ? const [
+                CharacterSummary(
+                  id: 1,
+                  name: 'Rick Sanchez',
+                  status: 'Alive',
+                  species: 'Human',
+                  type: '',
+                  gender: 'Male',
+                  image: 'https://example.com/rick.png',
+                  origin: 'Earth (C-137)',
+                  location: 'Citadel of Ricks',
+                  episodeCount: 51,
+                ),
+              ]
+              : const [],
+    );
+  }
+}
+
+class FakeLocationRepository implements LocationRepository {
+  @override
+  Future<List<LocationSummary>> getLocationsBatch(List<int> ids) async {
+    return (await getLocations()).locations;
+  }
+
+  @override
+  Future<List<LocationSummary>> getAllLocations() async {
+    return (await getLocations()).locations;
+  }
+
+  @override
+  Future<LocationDetails> getLocationDetails(int id) async {
+    return const LocationDetails(
+      id: 1,
+      name: 'Earth (C-137)',
+      type: 'Planet',
+      dimension: 'Dimension C-137',
+      residentCount: 1,
+      residents: [
+        CharacterSummary(
+          id: 1,
+          name: 'Rick Sanchez',
+          status: 'Alive',
+          species: 'Human',
+          type: '',
+          gender: 'Male',
+          image: 'https://example.com/rick.png',
+          origin: 'Earth (C-137)',
+          location: 'Citadel of Ricks',
+          episodeCount: 51,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<LocationListPage> getLocations({int page = 1}) async {
+    return LocationListPage(
+      page: page,
+      totalPages: 1,
+      totalItems: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      locations: const [
+        LocationSummary(
+          id: 1,
+          name: 'Earth (C-137)',
+          type: 'Planet',
+          dimension: 'Dimension C-137',
+          residentCount: 27,
+        ),
+      ],
+    );
+  }
+}
+
+class FakeEpisodeRepository implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async {
+    return (await getEpisodes()).episodes;
+  }
+
+  @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    return (await getEpisodes()).episodes;
+  }
+
+  @override
+  Future<EpisodeListPage> getEpisodes({int page = 1}) async {
+    return EpisodeListPage(
+      page: page,
+      totalPages: 1,
+      totalItems: 2,
+      hasNextPage: false,
+      hasPreviousPage: false,
       episodes: const [
         EpisodeSummary(
           id: 1,
-          name: 'Pilot',
+          name: 'Z Episode',
           airDate: 'December 2, 2013',
           code: 'S01E01',
+          characterCount: 1,
+        ),
+        EpisodeSummary(
+          id: 2,
+          name: 'A Episode',
+          airDate: 'December 9, 2013',
+          code: 'S01E02',
           characterCount: 1,
         ),
       ],
@@ -47,27 +386,8 @@ class FakeEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
-    return const EpisodeDetails(
-      id: 1,
-      name: 'Pilot',
-      airDate: 'December 2, 2013',
-      code: 'S01E01',
-      characterCount: 1,
-      characters: [
-        CharacterSummary(
-          id: 1,
-          name: 'Rick Sanchez',
-          status: 'Alive',
-          species: 'Human',
-          type: '',
-          gender: 'Male',
-          image: 'https://example.com/rick.png',
-          origin: 'Earth',
-          location: 'Earth',
-          episodeCount: 51,
-        ),
-      ],
-    );
+    throw UnimplementedError();
   }
 }

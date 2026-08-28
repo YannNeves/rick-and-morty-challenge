@@ -30,12 +30,16 @@ type ClientConfig = {
   baseUrl: string;
   timeoutMs: number;
   cacheTtlMs: number;
+  cacheMaxEntries?: number;
   fetchFn?: typeof fetch;
+  sleepFn?: (milliseconds: number) => Promise<void>;
+  randomFn?: () => number;
 };
 
 type CacheValue =
   | RickAndMortyEpisode
   | RickAndMortyEpisode[]
+  | RickAndMortyCharacter
   | RickAndMortyCharacter[]
   | RickAndMortyLocation
   | RickAndMortyLocation[]
@@ -46,16 +50,26 @@ type CacheValue =
 export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGateway, LocationsGateway {
   private readonly cache: InMemoryCache<CacheValue>;
   private readonly fetchFn: typeof fetch;
+  private readonly inFlight = new Map<string, Promise<CacheValue>>();
+  private readonly sleepFn: (milliseconds: number) => Promise<void>;
+  private readonly randomFn: () => number;
 
   constructor(private readonly config: ClientConfig) {
-    this.cache = new InMemoryCache<CacheValue>(config.cacheTtlMs);
+    this.cache = new InMemoryCache<CacheValue>(
+      config.cacheTtlMs,
+      config.cacheMaxEntries
+    );
     this.fetchFn = config.fetchFn ?? fetch;
+    this.sleepFn = config.sleepFn ?? ((milliseconds) =>
+      new Promise((resolve) => setTimeout(resolve, milliseconds)));
+    this.randomFn = config.randomFn ?? Math.random;
   }
 
   async listEpisodes(
     filters: EpisodeListFilters
   ): Promise<EpisodePage> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     if (filters.name) {
       searchParams.set("name", filters.name);
@@ -66,7 +80,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyEpisode>>(
-      `/episode?${searchParams.toString()}`
+      `/episode${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+      { notFoundValue: this.emptyPage<RickAndMortyEpisode>() }
     );
 
     return {
@@ -82,7 +97,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
   async listCharacters(
     filters: CharacterListFilters
   ): Promise<CharacterListResult> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     for (const key of ["name", "status", "species", "type", "gender"] as const) {
       const value = filters[key];
@@ -92,7 +108,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyCharacter>>(
-      `/character?${searchParams.toString()}`
+      `/character${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+      { notFoundValue: this.emptyPage<RickAndMortyCharacter>() }
     );
 
     return {
@@ -106,7 +123,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
   }
 
   async listLocations(filters: LocationListFilters): Promise<LocationPage> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     for (const key of ["name", "type", "dimension"] as const) {
       const value = filters[key];
@@ -116,7 +134,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyLocation>>(
-      `/location?${searchParams.toString()}`
+      `/location${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`,
+      { notFoundValue: this.emptyPage<RickAndMortyLocation>() }
     );
 
     return {
@@ -173,18 +192,46 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     return (Array.isArray(response) ? response : [response]).map(toCharacterSummary);
   }
 
-  private async getJson<T>(path: string): Promise<T> {
+  private async getJson<T extends CacheValue>(
+    path: string,
+    options: { notFoundValue?: T } = {}
+  ): Promise<T> {
     const cached = this.cache.get(path) as T | undefined;
 
-    if (cached) {
+    if (cached !== undefined) {
       return cached;
     }
 
+    const pending = this.inFlight.get(path);
+    if (pending) {
+      return pending as Promise<T>;
+    }
+
+    const request = this.requestJson(path, options);
+    this.inFlight.set(path, request as Promise<CacheValue>);
+
+    try {
+      return await request;
+    } finally {
+      if (this.inFlight.get(path) === request) {
+        this.inFlight.delete(path);
+      }
+    }
+  }
+
+  private async requestJson<T extends CacheValue>(
+    path: string,
+    options: { notFoundValue?: T }
+  ): Promise<T> {
     const url = resolveApiUrl(this.config.baseUrl, path);
 
     const response = await this.fetchWithRetry(url);
 
     if (response.status === 404) {
+      if (options.notFoundValue !== undefined) {
+        this.cache.set(path, options.notFoundValue);
+        return options.notFoundValue;
+      }
       throw notFound("Rick and Morty resource not found", { path });
     }
 
@@ -196,18 +243,27 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const body = (await response.json()) as T;
-    this.cache.set(path, body as CacheValue);
+    this.cache.set(path, body);
     return body;
   }
 
   private async fetchWithRetry(url: URL): Promise<Response> {
     let lastError: unknown;
+    const maxAttempts = 3;
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
-        return await this.fetchOnce(url);
+        const response = await this.fetchOnce(url);
+        if (!this.isRetryableStatus(response.status) || attempt === maxAttempts - 1) {
+          return response;
+        }
+
+        await this.sleepFn(this.retryDelay(response, attempt));
       } catch (error) {
         lastError = error;
+        if (attempt < maxAttempts - 1) {
+          await this.sleepFn(this.backoffDelay(attempt));
+        }
       }
     }
 
@@ -222,6 +278,36 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
       url: url.toString(),
       cause: lastError instanceof Error ? lastError.message : String(lastError)
     });
+  }
+
+  private isRetryableStatus(status: number): boolean {
+    return status === 429 || status === 502 || status === 503 || status === 504;
+  }
+
+  private retryDelay(response: Response, attempt: number): number {
+    const retryAfter = response.headers.get("retry-after");
+    if (!retryAfter) return this.backoffDelay(attempt);
+
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return seconds * 1_000;
+    }
+
+    const date = Date.parse(retryAfter);
+    return Number.isNaN(date)
+      ? this.backoffDelay(attempt)
+      : Math.max(0, date - Date.now());
+  }
+
+  private backoffDelay(attempt: number): number {
+    return 250 * (2 ** attempt) + Math.floor(this.randomFn() * 101);
+  }
+
+  private emptyPage<T>(): RickAndMortyPage<T> {
+    return {
+      info: { count: 0, pages: 0, next: null, prev: null },
+      results: []
+    };
   }
 
   private async fetchOnce(url: URL): Promise<Response> {

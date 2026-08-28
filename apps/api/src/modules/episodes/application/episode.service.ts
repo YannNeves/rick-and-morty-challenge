@@ -13,6 +13,9 @@ import type {
   EpisodeCharactersGateway,
   EpisodesGateway
 } from "./episodes.gateway.js";
+import { mapWithConcurrency } from "../../../shared/async/map-with-concurrency.js";
+
+const PAGE_CONCURRENCY = 4;
 
 export type EpisodeDetailsOptions = {
   sortCharactersBy?: CharacterSortField;
@@ -32,6 +35,21 @@ export class EpisodeService {
       ...page,
       episodes: page.episodes.map(({ characterIds: _characterIds, ...episode }) => episode)
     };
+  }
+
+  async listAllEpisodes(): Promise<EpisodeSummary[]> {
+    const firstPage = await this.episodesGateway.listEpisodes({ page: 1 });
+    const remainingPages = await mapWithConcurrency(
+      Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+        index + 2
+      ),
+      PAGE_CONCURRENCY,
+      (page) => this.episodesGateway.listEpisodes({ page })
+    );
+    return [firstPage, ...remainingPages]
+      .flatMap((page) => page.episodes)
+      .map(({ characterIds: _characterIds, ...episode }) => episode)
+      .toSorted((left, right) => left.code.localeCompare(right.code));
   }
 
   async getEpisodeDetails(

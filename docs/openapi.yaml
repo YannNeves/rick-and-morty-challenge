@@ -2,199 +2,393 @@ openapi: 3.1.0
 info:
   title: Rick and Morty Challenge API
   version: 1.0.0
+  description: Backend for Frontend que normaliza a API pública para os clientes Flutter.
+  license:
+    name: ISC
 servers:
-  - url: http://localhost:3000/api/v1
+  - url: /api/v1
+    description: API versionada no host atual
+security: []
+tags:
+  - name: Characters
+    description: Listagens e detalhes de personagens.
+  - name: Locations
+    description: Listagens e detalhes de localizações e residentes.
+  - name: Episodes
+    description: Listagens e detalhes de episódios e participantes.
 paths:
   /characters:
     get:
-      summary: List and filter characters
+      tags: [Characters]
+      operationId: listCharacters
+      summary: Lista e filtra personagens com paginação
       parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: name
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Page"
+        - { in: query, name: name, schema: { type: string } }
         - in: query
           name: status
-          schema:
-            type: string
-            enum: [alive, dead, unknown]
-        - in: query
-          name: species
-          schema:
-            type: string
-        - in: query
-          name: type
-          schema:
-            type: string
+          schema: { type: string, enum: [alive, dead, unknown] }
+        - { in: query, name: species, schema: { type: string } }
+        - { in: query, name: type, schema: { type: string } }
         - in: query
           name: gender
-          schema:
-            type: string
-            enum: [female, male, genderless, unknown]
+          schema: { type: string, enum: [female, male, genderless, unknown] }
       responses:
         "200":
-          description: Character page
-        "400":
-          description: Invalid pagination or enum filter
+          description: Página de personagens; filtros sem resultado retornam uma página vazia.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CharacterPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
+  /characters/all:
+    get:
+      tags: [Characters]
+      operationId: listAllCharacters
+      summary: Lista todos os personagens em ordem alfabética global
+      responses:
+        "200":
+          description: Coleção ordenada por nome e, em caso de empate, ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [characters]
+                properties:
+                  characters:
+                    type: array
+                    items: { $ref: "#/components/schemas/CharacterSummary" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /characters/batch:
     get:
-      summary: Get multiple characters
+      tags: [Characters]
+      operationId: getCharactersBatch
+      summary: Obtém vários personagens preservando a ordem solicitada
       parameters:
-        - in: query
-          name: ids
-          required: true
-          schema:
-            type: string
-            example: "1,183"
+        - $ref: "#/components/parameters/CharacterIds"
       responses:
         "200":
-          description: Ordered character collection
-        "400":
-          description: Invalid or oversized id list
+          description: Coleção de personagens
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CharactersResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /characters/{id}:
     get:
-      summary: Get character details
+      tags: [Characters]
+      operationId: getCharacterDetails
+      summary: Obtém detalhes de um personagem
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            minimum: 1
+        - $ref: "#/components/parameters/ResourceId"
       responses:
         "200":
-          description: Character details with related resource ids
-        "400":
-          description: Invalid character id
-        "404":
-          description: Character not found
+          description: Personagem com referências de origem, localização e episódios
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CharacterDetails" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /locations:
     get:
-      summary: List and filter locations
+      tags: [Locations]
+      operationId: listLocations
+      summary: Lista e filtra localizações com paginação
       parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: name
-          schema:
-            type: string
-        - in: query
-          name: type
-          schema:
-            type: string
-        - in: query
-          name: dimension
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Page"
+        - { in: query, name: name, schema: { type: string } }
+        - { in: query, name: type, schema: { type: string } }
+        - { in: query, name: dimension, schema: { type: string } }
       responses:
         "200":
-          description: Location page
-        "400":
-          description: Invalid pagination
+          description: Página de localizações; filtros sem resultado retornam uma página vazia.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
+  /locations/all:
+    get:
+      tags: [Locations]
+      operationId: listAllLocations
+      summary: Lista todas as localizações por nome
+      responses:
+        "200":
+          description: Coleção completa de localizações
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationsResponse" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /locations/batch:
     get:
-      summary: Get multiple locations
+      tags: [Locations]
+      operationId: getLocationsBatch
+      summary: Obtém várias localizações preservando a ordem solicitada
       parameters:
-        - in: query
-          name: ids
-          required: true
-          schema:
-            type: string
-            example: "3,21"
+        - $ref: "#/components/parameters/LocationIds"
       responses:
         "200":
-          description: Ordered location collection
-        "400":
-          description: Invalid or oversized id list
+          description: Coleção de localizações
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationsResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /locations/{id}:
     get:
-      summary: Get location details with sorted residents
+      tags: [Locations]
+      operationId: getLocationDetails
+      summary: Obtém uma localização e seus residentes ordenados
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            minimum: 1
+        - $ref: "#/components/parameters/ResourceId"
       responses:
         "200":
-          description: Location details with residents sorted by name
-        "400":
-          description: Invalid location id
-        "404":
-          description: Location not found
+          description: Localização com residentes ordenados por nome e ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LocationDetails" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /episodes:
     get:
-      summary: List episodes
+      tags: [Episodes]
+      operationId: listEpisodes
+      summary: Lista episódios com paginação
       parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: name
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Page"
+        - { in: query, name: name, schema: { type: string } }
         - in: query
           name: episode
-          schema:
-            type: string
+          description: Código parcial ou completo, como S01E01.
+          schema: { type: string }
       responses:
         "200":
-          description: Episode page
+          description: Página de episódios; filtros sem resultado retornam uma página vazia.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EpisodePage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
+  /episodes/all:
+    get:
+      tags: [Episodes]
+      operationId: listAllEpisodes
+      summary: Lista todos os episódios por temporada e episódio
+      responses:
+        "200":
+          description: Coleção completa de episódios
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EpisodesResponse" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /episodes/batch:
     get:
-      summary: Get multiple episodes
+      tags: [Episodes]
+      operationId: getEpisodesBatch
+      summary: Obtém vários episódios preservando a ordem solicitada
       parameters:
-        - in: query
-          name: ids
-          required: true
-          schema:
-            type: string
-            example: "10,28"
+        - $ref: "#/components/parameters/EpisodeIds"
       responses:
         "200":
-          description: Ordered episode summary collection
-        "400":
-          description: Invalid or oversized id list
+          description: Coleção de episódios
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EpisodesResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
   /episodes/{id}:
     get:
-      summary: Get episode details with sorted characters
+      tags: [Episodes]
+      operationId: getEpisodeDetails
+      summary: Obtém episódio com personagens ordenados
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            minimum: 1
+        - $ref: "#/components/parameters/ResourceId"
         - in: query
           name: sortCharactersBy
-          schema:
-            type: string
-            enum: [name, id, status, species]
-            default: name
+          schema: { type: string, enum: [name, id, status, species], default: name }
         - in: query
           name: characterOrder
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: asc
+          schema: { type: string, enum: [asc, desc], default: asc }
       responses:
         "200":
-          description: Episode details
-        "400":
-          description: Invalid request
-        "404":
-          description: Episode not found
+          description: Episódio com personagens ordenados pelo campo e desempate por ID
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EpisodeDetails" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "502": { $ref: "#/components/responses/UpstreamError" }
+components:
+  parameters:
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    ResourceId:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    CharacterIds:
+      in: query
+      name: ids
+      required: true
+      description: Até 100 IDs positivos separados por vírgula.
+      schema: { type: string, example: "1,183" }
+    LocationIds:
+      in: query
+      name: ids
+      required: true
+      description: Até 100 IDs positivos separados por vírgula.
+      schema: { type: string, example: "3,21" }
+    EpisodeIds:
+      in: query
+      name: ids
+      required: true
+      description: Até 100 IDs positivos separados por vírgula.
+      schema: { type: string, example: "10,28" }
+  responses:
+    BadRequest:
+      description: Parâmetros inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    NotFound:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    UpstreamError:
+      description: A API pública não respondeu após as tentativas configuradas
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: UPSTREAM_ERROR }
+            message: { type: string }
+            details: {}
+    Pagination:
+      type: object
+      required: [page, totalPages, totalItems, hasNextPage, hasPreviousPage]
+      properties:
+        page: { type: integer, minimum: 1 }
+        totalPages: { type: integer, minimum: 0 }
+        totalItems: { type: integer, minimum: 0 }
+        hasNextPage: { type: boolean }
+        hasPreviousPage: { type: boolean }
+    CharacterSummary:
+      type: object
+      required: [id, name, status, species, type, gender, image, origin, location, episodeCount]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        status: { type: string }
+        species: { type: string }
+        type: { type: string }
+        gender: { type: string }
+        image: { type: string, format: uri }
+        origin: { type: string }
+        location: { type: string }
+        episodeCount: { type: integer, minimum: 0 }
+    CharacterReference:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: [integer, "null"] }
+        name: { type: string }
+    CharacterDetails:
+      type: object
+      required: [id, name, status, species, type, gender, image, origin, location, episodeCount, episodeIds]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        status: { type: string }
+        species: { type: string }
+        type: { type: string }
+        gender: { type: string }
+        image: { type: string, format: uri }
+        origin: { $ref: "#/components/schemas/CharacterReference" }
+        location: { $ref: "#/components/schemas/CharacterReference" }
+        episodeCount: { type: integer, minimum: 0 }
+        episodeIds:
+          type: array
+          items: { type: integer }
+    CharactersResponse:
+      type: object
+      required: [characters]
+      properties:
+        characters:
+          type: array
+          items: { $ref: "#/components/schemas/CharacterSummary" }
+    CharacterPage:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - $ref: "#/components/schemas/CharactersResponse"
+    LocationSummary:
+      type: object
+      required: [id, name, type, dimension, residentCount]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        type: { type: string }
+        dimension: { type: string }
+        residentCount: { type: integer, minimum: 0 }
+    LocationsResponse:
+      type: object
+      required: [locations]
+      properties:
+        locations:
+          type: array
+          items: { $ref: "#/components/schemas/LocationSummary" }
+    LocationDetails:
+      allOf:
+        - $ref: "#/components/schemas/LocationSummary"
+        - type: object
+          required: [residents]
+          properties:
+            residents:
+              type: array
+              items: { $ref: "#/components/schemas/CharacterSummary" }
+    LocationPage:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - $ref: "#/components/schemas/LocationsResponse"
+    EpisodeSummary:
+      type: object
+      required: [id, name, airDate, code, characterCount]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        airDate: { type: string }
+        code: { type: string, pattern: '^S\d+E\d+$' }
+        characterCount: { type: integer, minimum: 0 }
+    EpisodesResponse:
+      type: object
+      required: [episodes]
+      properties:
+        episodes:
+          type: array
+          items: { $ref: "#/components/schemas/EpisodeSummary" }
+    EpisodeDetails:
+      allOf:
+        - $ref: "#/components/schemas/EpisodeSummary"
+        - type: object
+          required: [characters]
+          properties:
+            characters:
+              type: array
+              items: { $ref: "#/components/schemas/CharacterSummary" }
+    EpisodePage:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - $ref: "#/components/schemas/EpisodesResponse"

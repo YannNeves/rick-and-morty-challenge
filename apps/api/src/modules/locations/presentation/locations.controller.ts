@@ -26,6 +26,10 @@ export class LocationsController {
     res.json(await this.service.getLocationDetails(id));
   };
 
+  all = async (_req: Request, res: Response): Promise<void> => {
+    res.json({ locations: await this.service.listAllLocations() });
+  };
+
   batch = async (req: Request, res: Response): Promise<void> => {
     const ids = parseIdList(req.query.ids, "ids", LOCATION_BATCH_LIMIT);
     res.json({ locations: await this.service.getLocationsBatch(ids) });

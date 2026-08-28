@@ -1,5 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_colors.dart';
+import '../../../app/navigation/widgets/app_search_bar.dart';
+import '../../../app/navigation/widgets/web_detail_header.dart';
+import '../../characters/data/character_repository.dart';
+import '../../characters/domain/character_models.dart' as character_models;
+import '../../characters/presentation/character_details_page.dart';
+import '../../characters/presentation/widgets/character_card.dart';
+import '../../characters/presentation/widgets/character_sort_drawer.dart';
+import '../../locations/data/location_repository.dart';
 import '../data/episode_repository.dart';
 import '../domain/character_sort.dart';
 import '../domain/episode_models.dart';
@@ -11,11 +21,17 @@ class EpisodeDetailsPage extends StatefulWidget {
   const EpisodeDetailsPage({
     required this.episode,
     required this.episodeRepository,
+    required this.characterRepository,
+    required this.locationRepository,
+    this.onGoHome,
     super.key,
   });
 
   final EpisodeSummary episode;
   final EpisodeRepository episodeRepository;
+  final CharacterRepository characterRepository;
+  final LocationRepository locationRepository;
+  final VoidCallback? onGoHome;
 
   @override
   State<EpisodeDetailsPage> createState() => _EpisodeDetailsPageState();
@@ -23,6 +39,7 @@ class EpisodeDetailsPage extends StatefulWidget {
 
 class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
   late final EpisodeDetailsController _controller;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -43,7 +60,23 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.episode.code)),
+      appBar:
+          kIsWeb
+              ? WebDetailHeader(
+                title:
+                    '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+                onBack: () => Navigator.of(context).maybePop(),
+                onHome: _goHome,
+              )
+              : AppBar(
+                leading: BackButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                title: Text(
+                  '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+                  style: const TextStyle(color: AppColors.blue),
+                ),
+              ),
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
@@ -65,57 +98,171 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
             return const SizedBox.shrink();
           }
 
+          final filteredCharacters = details.characters
+              .where(
+                (character) =>
+                    character.name.toLowerCase().contains(_searchQuery),
+              )
+              .toList(growable: false);
+          final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding =
+              isDesktop && width > 1288 ? (width - 1240) / 2 : 16.0;
+
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    20,
+                    horizontalPadding,
+                    8,
+                  ),
                   child: _EpisodeHeader(details: details),
                 ),
               ),
               SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1240),
+                    child: AppSearchBar(
+                      initialValue: '',
+                      hintText: 'Busque por personagem',
+                      padding:
+                          kIsWeb
+                              ? const EdgeInsets.symmetric(vertical: 14)
+                              : const EdgeInsets.fromLTRB(24, 14, 24, 8),
+                      onChanged: (value) {
+                        setState(
+                          () => _searchQuery = value.trim().toLowerCase(),
+                        );
+                      },
+                      hasActiveFilters:
+                          _controller.sortBy != CharacterSortBy.name ||
+                          _controller.sortOrder != CharacterSortOrder.ascending,
+                      onFilterPressed: _openOptions,
+                    ),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: _SortControl(
-                    selected: _controller.sortBy,
-                    onChanged: _controller.changeSort,
+                  padding: EdgeInsets.fromLTRB(
+                    isDesktop ? horizontalPadding : 24,
+                    12,
+                    isDesktop ? horizontalPadding : 24,
+                    16,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Personagens',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text('${filteredCharacters.length} encontrados'),
+                    ],
                   ),
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                sliver: SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.crossAxisExtent;
-                    final count =
-                        width >= 900
-                            ? 3
-                            : width >= 560
-                            ? 2
-                            : 1;
-
-                    return SliverGrid.builder(
-                      itemCount: details.characters.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: count,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        mainAxisExtent: 168,
-                      ),
-                      itemBuilder: (context, index) {
-                        return _CharacterTile(
-                          character: details.characters[index],
-                        );
-                      },
-                    );
-                  },
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  0,
+                  horizontalPadding,
+                  24,
                 ),
+                sliver:
+                    isDesktop
+                        ? SliverGrid.builder(
+                          itemCount: filteredCharacters.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                childAspectRatio: 0.73,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemBuilder: (context, index) {
+                            final character = filteredCharacters[index];
+                            return CharacterCard(
+                              name: character.name,
+                              status: character.status,
+                              species: character.species,
+                              image: character.image,
+                              origin: character.origin,
+                              onTap: () => _openCharacter(character),
+                            );
+                          },
+                        )
+                        : SliverList.builder(
+                          itemCount: filteredCharacters.length,
+                          itemBuilder: (context, index) {
+                            final character = filteredCharacters[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: CharacterCard(
+                                name: character.name,
+                                status: character.status,
+                                species: character.species,
+                                image: character.image,
+                                origin: character.origin,
+                                onTap: () => _openCharacter(character),
+                              ),
+                            );
+                          },
+                        ),
               ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _openOptions() async {
+    final result = await showCharacterSortDrawer(
+      context,
+      initialSort: _controller.sortBy,
+      initialOrder: _controller.sortOrder,
+    );
+    if (result != null) {
+      await _controller.changeSort(result.sortBy, result.order);
+    }
+  }
+
+  void _openCharacter(CharacterSummary character) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => CharacterDetailsPage(
+              character: character_models.CharacterSummary(
+                id: character.id,
+                name: character.name,
+                status: character.status,
+                species: character.species,
+                type: character.type,
+                gender: character.gender,
+                image: character.image,
+                origin: character.origin,
+                location: character.location,
+                episodeCount: character.episodeCount,
+              ),
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
+              locationRepository: widget.locationRepository,
+              onGoHome: widget.onGoHome,
+            ),
+      ),
+    );
+  }
+
+  void _goHome() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    widget.onGoHome?.call();
   }
 }
 
@@ -126,185 +273,70 @@ class _EpisodeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outlineVariant),
+        color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              details.name,
-              style: Theme.of(context).textTheme.headlineSmall,
+            _EpisodeInformation(
+              icon: Icons.calendar_month_outlined,
+              label: 'Data que foi ao ar:',
+              value: details.airDate,
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            const SizedBox(height: 12),
+            _EpisodeInformation(
+              icon: Icons.people_outline,
+              label: 'Número de personagens:',
+              value: '${details.characterCount}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EpisodeInformation extends StatelessWidget {
+  const _EpisodeInformation({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(width: 2),
+        Icon(icon, size: 22),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
               children: [
-                Chip(label: Text(details.code)),
-                Chip(label: Text(details.airDate)),
-                Chip(label: Text('${details.characterCount} personagens')),
+                TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                TextSpan(text: value),
               ],
             ),
-          ],
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
         ),
-      ),
+      ],
     );
-  }
-}
-
-class _SortControl extends StatelessWidget {
-  const _SortControl({required this.selected, required this.onChanged});
-
-  final CharacterSortBy selected;
-  final ValueChanged<CharacterSortBy> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SegmentedButton<CharacterSortBy>(
-        segments: const [
-          ButtonSegment(
-            value: CharacterSortBy.name,
-            icon: Icon(Icons.sort_by_alpha),
-            label: Text('Nome'),
-          ),
-          ButtonSegment(
-            value: CharacterSortBy.status,
-            icon: Icon(Icons.monitor_heart_outlined),
-            label: Text('Status'),
-          ),
-          ButtonSegment(
-            value: CharacterSortBy.species,
-            icon: Icon(Icons.category_outlined),
-            label: Text('Espécie'),
-          ),
-          ButtonSegment(
-            value: CharacterSortBy.id,
-            icon: Icon(Icons.tag),
-            label: Text('ID'),
-          ),
-        ],
-        selected: {selected},
-        onSelectionChanged: (values) => onChanged(values.first),
-      ),
-    );
-  }
-}
-
-class _CharacterTile extends StatelessWidget {
-  const _CharacterTile({required this.character});
-
-  final CharacterSummary character;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                character.image,
-                width: 92,
-                height: 92,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return ColoredBox(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: const SizedBox(
-                      width: 92,
-                      height: 92,
-                      child: Icon(Icons.person),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    character.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _StatusChip(status: character.status),
-                      _InfoChip(label: character.species),
-                      _InfoChip(label: character.gender),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    character.location,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status.toLowerCase()) {
-      'alive' => const Color(0xFF2E7D32),
-      'dead' => const Color(0xFFC62828),
-      _ => const Color(0xFF6D4C41),
-    };
-
-    return Chip(
-      visualDensity: VisualDensity.compact,
-      avatar: Icon(Icons.circle, size: 10, color: color),
-      label: Text(status),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(visualDensity: VisualDensity.compact, label: Text(label));
   }
 }

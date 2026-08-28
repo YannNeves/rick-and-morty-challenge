@@ -9,6 +9,7 @@ services:
       RICK_AND_MORTY_API_URL: https://rickandmortyapi.com/api
       REQUEST_TIMEOUT_MS: 6000
       CACHE_TTL_MS: 60000
+      CACHE_MAX_ENTRIES: 500
       ALLOWED_ORIGINS: "*"
     ports:
       - "3000:3000"

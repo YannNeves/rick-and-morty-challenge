@@ -21,6 +21,15 @@ void main() {
 
 class FakeEpisodeRepository implements EpisodeRepository {
   @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async =>
       throw UnimplementedError();
 
@@ -28,6 +37,7 @@ class FakeEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     return const EpisodeDetails(
       id: 1,

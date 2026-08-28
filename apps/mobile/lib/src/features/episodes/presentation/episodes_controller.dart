@@ -11,19 +11,24 @@ class EpisodesController extends ChangeNotifier {
   final EpisodeRepository _episodeRepository;
 
   LoadStatus status = LoadStatus.idle;
-  EpisodeListPage? page;
+  List<EpisodeSummary> episodes = const [];
   String? errorMessage;
 
-  Future<void> load({int pageNumber = 1}) async {
+  Future<void> loadAll() async {
     status = LoadStatus.loading;
     errorMessage = null;
     notifyListeners();
 
     try {
-      page = await _episodeRepository.getEpisodes(page: pageNumber);
+      final allEpisodes = <EpisodeSummary>[
+        ...await _episodeRepository.getAllEpisodes(),
+      ];
+
+      allEpisodes.sort((first, second) => first.code.compareTo(second.code));
+      episodes = List.unmodifiable(allEpisodes);
       status = LoadStatus.success;
       notifyListeners();
-    } catch (error) {
+    } catch (_) {
       status = LoadStatus.failure;
       errorMessage = 'Não foi possível carregar os episódios.';
       notifyListeners();

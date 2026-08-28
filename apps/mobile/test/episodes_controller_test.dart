@@ -11,14 +11,23 @@ void main() {
       episodeRepository: FakeEpisodeRepository(),
     );
 
-    await controller.load(pageNumber: 1);
+    await controller.loadAll();
 
     expect(controller.status, LoadStatus.success);
-    expect(controller.page?.episodes.single.name, 'Pilot');
+    expect(controller.episodes.single.name, 'Pilot');
   });
 }
 
 class FakeEpisodeRepository implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    return (await getEpisodes()).episodes;
+  }
+
   @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async {
     return EpisodeListPage(
@@ -43,6 +52,7 @@ class FakeEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     throw UnimplementedError();
   }

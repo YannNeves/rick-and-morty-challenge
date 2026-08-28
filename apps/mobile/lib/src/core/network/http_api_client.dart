@@ -32,27 +32,6 @@ class HttpApiClient implements ApiClient {
     return _decodeMap(response);
   }
 
-  @override
-  Future<void> postMap(
-    String path, {
-    required Map<String, dynamic> body,
-  }) async {
-    final response = await _httpClient
-        .post(
-          _resolve(path),
-          headers: const {
-            'accept': 'application/json',
-            'content-type': 'application/json',
-          },
-          body: jsonEncode(body),
-        )
-        .timeout(timeout);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw _exceptionFromResponse(response);
-    }
-  }
-
   Uri _resolve(String path, [Map<String, String>? query]) {
     final basePath =
         baseUri.path.endsWith('/')
