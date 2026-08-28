@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_colors.dart';
+import '../../characters/presentation/widgets/character_card.dart';
 import '../data/episode_repository.dart';
 import '../domain/character_sort.dart';
 import '../domain/episode_models.dart';
@@ -43,7 +45,11 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.episode.code)),
+      appBar: AppBar(
+        title: Text(
+          '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+        ),
+      ),
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
@@ -84,29 +90,19 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                sliver: SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.crossAxisExtent;
-                    final count =
-                        width >= 900
-                            ? 3
-                            : width >= 560
-                            ? 2
-                            : 1;
-
-                    return SliverGrid.builder(
-                      itemCount: details.characters.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: count,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        mainAxisExtent: 168,
+                sliver: SliverList.builder(
+                  itemCount: details.characters.length,
+                  itemBuilder: (context, index) {
+                    final character = details.characters[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: CharacterCard(
+                        name: character.name,
+                        status: character.status,
+                        species: character.species,
+                        image: character.image,
+                        origin: character.origin,
                       ),
-                      itemBuilder: (context, index) {
-                        return _CharacterTile(
-                          character: details.characters[index],
-                        );
-                      },
                     );
                   },
                 ),
@@ -126,36 +122,70 @@ class _EpisodeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outlineVariant),
+        color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              details.name,
-              style: Theme.of(context).textTheme.headlineSmall,
+            _EpisodeInformation(
+              icon: Icons.calendar_month_outlined,
+              label: 'Data que foi ao ar:',
+              value: details.airDate,
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(label: Text(details.code)),
-                Chip(label: Text(details.airDate)),
-                Chip(label: Text('${details.characterCount} personagens')),
-              ],
+            const SizedBox(height: 12),
+            _EpisodeInformation(
+              icon: Icons.people_outline,
+              label: 'Número de personagens:',
+              value: '${details.characterCount}',
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EpisodeInformation extends StatelessWidget {
+  const _EpisodeInformation({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(width: 2),
+        Icon(icon, size: 22, color: AppColors.blue),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                TextSpan(text: value),
+              ],
+            ),
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -197,114 +227,5 @@ class _SortControl extends StatelessWidget {
         onSelectionChanged: (values) => onChanged(values.first),
       ),
     );
-  }
-}
-
-class _CharacterTile extends StatelessWidget {
-  const _CharacterTile({required this.character});
-
-  final CharacterSummary character;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                character.image,
-                width: 92,
-                height: 92,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return ColoredBox(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: const SizedBox(
-                      width: 92,
-                      height: 92,
-                      child: Icon(Icons.person),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    character.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _StatusChip(status: character.status),
-                      _InfoChip(label: character.species),
-                      _InfoChip(label: character.gender),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    character.location,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status.toLowerCase()) {
-      'alive' => const Color(0xFF2E7D32),
-      'dead' => const Color(0xFFC62828),
-      _ => const Color(0xFF6D4C41),
-    };
-
-    return Chip(
-      visualDensity: VisualDensity.compact,
-      avatar: Icon(Icons.circle, size: 10, color: color),
-      label: Text(status),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(visualDensity: VisualDensity.compact, label: Text(label));
   }
 }
