@@ -11,7 +11,7 @@ class AnimatedBottomNavigation extends StatelessWidget {
     super.key,
   });
 
-  static const _height = 125.0;
+  static const _height = 81.0;
   static const _waveDiameter = 108.0;
 
   final int selectedIndex;
@@ -35,7 +35,7 @@ class AnimatedBottomNavigation extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned(
-                top: 44,
+                top: 0,
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -52,10 +52,10 @@ class AnimatedBottomNavigation extends StatelessWidget {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 420),
                 curve: Curves.easeInOutCubic,
-                top: 24,
+                top: 0,
                 left: notchCenter - (_waveDiameter / 2),
                 width: _waveDiameter,
-                height: 60,
+                height: 50,
                 child: ClipRect(
                   child: OverflowBox(
                     alignment: Alignment.bottomCenter,
@@ -130,7 +130,7 @@ class _NavigationItem extends StatelessWidget {
               child: AnimatedPadding(
                 duration: const Duration(milliseconds: 360),
                 curve: Curves.easeOutBack,
-                padding: EdgeInsets.only(top: selected ? 50 : 65),
+                padding: EdgeInsets.only(top: selected ? 6 : 21),
                 child: AnimatedScale(
                   scale: selected ? 1.12 : 1,
                   duration: const Duration(milliseconds: 320),
