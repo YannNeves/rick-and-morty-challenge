@@ -35,6 +35,7 @@ type ClientConfig = {
 
 type CacheValue =
   | RickAndMortyEpisode
+  | RickAndMortyEpisode[]
   | RickAndMortyCharacter[]
   | RickAndMortyLocation
   | RickAndMortyLocation[]
@@ -151,6 +152,13 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
 
   async getEpisode(id: number): Promise<Episode> {
     return toEpisode(await this.getJson<RickAndMortyEpisode>(`/episode/${id}`));
+  }
+
+  async getEpisodes(ids: number[]): Promise<Episode[]> {
+    if (ids.length === 0) return [];
+    const uniqueIds = [...new Set(ids)];
+    const response = await this.getJson<RickAndMortyEpisode | RickAndMortyEpisode[]>(`/episode/${uniqueIds.join(",")}`);
+    return (Array.isArray(response) ? response : [response]).map(toEpisode);
   }
 
   async getCharacters(ids: number[]): Promise<CharacterSummary[]> {

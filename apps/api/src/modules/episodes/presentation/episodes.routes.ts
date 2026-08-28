@@ -15,6 +15,7 @@ export const createEpisodesRouter = (
   const controller = new EpisodesController(new EpisodeService(gateway, gateway));
 
   router.get("/", asyncHandler(controller.list));
+  router.get("/batch", asyncHandler(controller.batch));
   router.get("/:id", asyncHandler(controller.details));
 
   return router;

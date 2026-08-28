@@ -81,6 +81,14 @@ Query params:
 - `name`: filtro opcional repassado para a Rick and Morty API.
 - `episode`: filtro opcional por codigo, exemplo `S03E07`.
 
+## `GET /episodes/batch`
+
+Retorna ate 100 resumos de episodios, removendo duplicidades e preservando a ordem.
+
+```bash
+curl "http://localhost:3000/api/v1/episodes/batch?ids=10,28"
+```
+
 ## `GET /episodes/:id`
 
 Retorna episodio e personagens participantes.
