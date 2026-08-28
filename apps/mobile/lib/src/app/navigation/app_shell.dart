@@ -10,6 +10,7 @@ import '../../features/characters/data/character_repository.dart';
 import '../../features/episodes/data/episode_repository.dart';
 import '../../features/home/ui/views/home_view.dart';
 import '../../features/locations/data/location_repository.dart';
+import '../../features/locations/presentation/locations_page.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
@@ -61,9 +62,16 @@ class AppShell extends StatelessWidget {
         onShowAllEpisodes:
             () => viewModel.selectDestination(AppDestination.episodes.index),
         onShowAllLocations:
-            () => viewModel.selectDestination(AppDestination.planets.index),
+            () => viewModel.selectDestination(AppDestination.locations.index),
         onShowAllCharacters:
             () => viewModel.selectDestination(AppDestination.characters.index),
+      );
+    }
+
+    if (destination == AppDestination.locations) {
+      return LocationsPage(
+        locationRepository: locationRepository,
+        searchQuery: viewModel.searchQuery,
       );
     }
 

@@ -40,12 +40,38 @@ void main() {
     expect(find.text('Rick Sanchez'), findsOneWidget);
     expect(find.byKey(const ValueKey('global-search-field')), findsNothing);
 
-    await tester.tap(find.text('Planetas'));
+    await tester.tap(find.text('Ver todos').at(1));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rota Planetas'), findsOneWidget);
+    expect(find.byKey(const ValueKey('locations-page-list')), findsOneWidget);
     expect(find.byKey(const ValueKey('global-search-field')), findsOneWidget);
-    expect(find.text('Busque por planeta'), findsOneWidget);
+    expect(find.text('Busque por localização'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Citadel',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('locations-no-search-results')),
+      findsOneWidget,
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Earth',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Earth (C-137)'), findsOneWidget);
+
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Localização'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('locations-page-list')), findsOneWidget);
 
     await tester.tap(find.text('Episódios'));
     await tester.pumpAndSettle();
