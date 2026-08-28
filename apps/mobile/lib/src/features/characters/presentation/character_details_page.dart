@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/navigation/widgets/web_detail_header.dart';
 import '../../../core/ui/display_value.dart';
+import '../../../core/ui/pluralization.dart';
 import '../../episodes/data/episode_repository.dart';
 import '../../episodes/domain/episode_models.dart' hide CharacterSummary;
 import '../../episodes/presentation/episode_details_page.dart';
@@ -304,7 +305,7 @@ class _DesktopCharacterOverview extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        'Participou de ${details.episodeCount} episódios',
+                        episodeParticipationText(details.episodeCount),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],

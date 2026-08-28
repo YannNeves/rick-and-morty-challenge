@@ -84,7 +84,7 @@ git switch -c feat/2-episode-integration
 Use Conventional Commits com o numero da issue:
 
 ```text
-<tipo>(<area>): <descricao> (#<issue>)
+<tipo>(#<issue>): <descricao>
 ```
 
 Exemplos:
@@ -162,4 +162,3 @@ Backlog -> Ready -> In progress -> In review -> Done
 
 Use `Blocked` quando existir um impedimento concreto. Uma tarefa somente deve ir
 para `Done` depois do merge e da validacao dos criterios de aceite.
-

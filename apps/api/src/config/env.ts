@@ -4,6 +4,7 @@ export type AppEnv = {
   rickAndMortyApiUrl: string;
   requestTimeoutMs: number;
   cacheTtlMs: number;
+  cacheMaxEntries: number;
   allowedOrigins: string[];
 };
 
@@ -30,5 +31,6 @@ export const env: AppEnv = {
     process.env.RICK_AND_MORTY_API_URL ?? "https://rickandmortyapi.com/api",
   requestTimeoutMs: toNumber(process.env.REQUEST_TIMEOUT_MS, 6000),
   cacheTtlMs: toNumber(process.env.CACHE_TTL_MS, 60_000),
+  cacheMaxEntries: toNumber(process.env.CACHE_MAX_ENTRIES, 500),
   allowedOrigins: toOrigins(process.env.ALLOWED_ORIGINS)
 };

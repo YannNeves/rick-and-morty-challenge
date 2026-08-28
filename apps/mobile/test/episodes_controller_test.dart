@@ -11,10 +11,10 @@ void main() {
       episodeRepository: FakeEpisodeRepository(),
     );
 
-    await controller.load(pageNumber: 1);
+    await controller.loadAll();
 
     expect(controller.status, LoadStatus.success);
-    expect(controller.page?.episodes.single.name, 'Pilot');
+    expect(controller.episodes.single.name, 'Pilot');
   });
 }
 

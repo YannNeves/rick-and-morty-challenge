@@ -84,10 +84,7 @@ class AppShell extends StatelessWidget {
                       child: AppSearchBar(
                         initialValue: viewModel.searchQuery,
                         hintText: destination.searchHint,
-                        padding:
-                            kIsWeb
-                                ? const EdgeInsets.fromLTRB(24, 14, 24, 8)
-                                : const EdgeInsets.fromLTRB(24, 14, 24, 8),
+                        padding: const EdgeInsets.fromLTRB(24, 14, 24, 8),
                         onChanged: viewModel.updateSearchQuery,
                         hasActiveFilters:
                             viewModel.filtersFor(destination).isNotEmpty,
@@ -113,8 +110,8 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildDestination(BuildContext context, AppDestination destination) {
-    if (destination == AppDestination.home) {
-      return HomeView(
+    return switch (destination) {
+      AppDestination.home => HomeView(
         characterRepository: characterRepository,
         episodeRepository: episodeRepository,
         locationRepository: locationRepository,
@@ -125,54 +122,32 @@ class AppShell extends StatelessWidget {
         onShowAllCharacters:
             () => viewModel.selectDestination(AppDestination.characters.index),
         onToggleTheme: viewModel.toggleTheme,
-      );
-    }
-
-    if (destination == AppDestination.locations) {
-      return LocationsPage(
-        locationRepository: locationRepository,
-        characterRepository: characterRepository,
-        episodeRepository: episodeRepository,
-        searchQuery: viewModel.searchQuery,
-        filters: viewModel.filtersFor(destination),
-        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
-      );
-    }
-
-    if (destination == AppDestination.episodes) {
-      return EpisodesPage(
-        episodeRepository: episodeRepository,
-        characterRepository: characterRepository,
-        locationRepository: locationRepository,
-        searchQuery: viewModel.searchQuery,
-        filters: viewModel.filtersFor(destination),
-        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
-      );
-    }
-
-    if (destination == AppDestination.characters) {
-      return CharactersPage(
-        characterRepository: characterRepository,
-        episodeRepository: episodeRepository,
-        locationRepository: locationRepository,
-        searchQuery: viewModel.searchQuery,
-        filters: viewModel.filtersFor(destination),
-        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
-      );
-    }
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      child: Center(
-        key: ValueKey(destination),
-        child: Text(
-          destination.routeLabel,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
       ),
-    );
+      AppDestination.locations => LocationsPage(
+        locationRepository: locationRepository,
+        characterRepository: characterRepository,
+        episodeRepository: episodeRepository,
+        searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
+        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
+      ),
+      AppDestination.episodes => EpisodesPage(
+        episodeRepository: episodeRepository,
+        characterRepository: characterRepository,
+        locationRepository: locationRepository,
+        searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
+        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
+      ),
+      AppDestination.characters => CharactersPage(
+        characterRepository: characterRepository,
+        episodeRepository: episodeRepository,
+        locationRepository: locationRepository,
+        searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
+        onGoHome: () => viewModel.selectDestination(AppDestination.home.index),
+      ),
+    };
   }
 
   Future<void> _openFilters(

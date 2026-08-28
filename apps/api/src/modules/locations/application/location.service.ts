@@ -7,6 +7,10 @@ import type {
 } from "../domain/location.models.js";
 import { LOCATION_BATCH_LIMIT } from "../domain/location.models.js";
 import type { LocationCharactersGateway, LocationsGateway } from "./locations.gateway.js";
+import { mapWithConcurrency } from "../../../shared/async/map-with-concurrency.js";
+import { compareCharactersByName } from "../../characters/domain/character-order.js";
+
+const PAGE_CONCURRENCY = 4;
 
 export class LocationService {
   constructor(
@@ -25,10 +29,12 @@ export class LocationService {
 
   async listAllLocations(): Promise<LocationSummary[]> {
     const firstPage = await this.locationsGateway.listLocations({ page: 1 });
-    const remainingPages = await Promise.all(
+    const remainingPages = await mapWithConcurrency(
       Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
-        this.locationsGateway.listLocations({ page: index + 2 })
-      )
+        index + 2
+      ),
+      PAGE_CONCURRENCY,
+      (page) => this.locationsGateway.listLocations({ page })
     );
     return [firstPage, ...remainingPages]
       .flatMap((page) => page.locations)
@@ -47,9 +53,7 @@ export class LocationService {
 
     return {
       ...summary,
-      residents: residents.toSorted((left, right) =>
-        left.name.localeCompare(right.name, "en", { sensitivity: "base" })
-      )
+      residents: residents.toSorted(compareCharactersByName)
     };
   }
 

@@ -79,18 +79,12 @@ class _EpisodesPageState extends State<EpisodesPage> {
         }
 
         final query = widget.searchQuery.toLowerCase();
-        final episodeFilter = widget.filters['episode'] ?? '';
         final filteredEpisodes = (query.isEmpty
                 ? _controller.episodes
                 : _controller.episodes
                     .where((episode) {
-                      final matchesName =
-                          episode.name.toLowerCase().contains(query) ||
+                      return episode.name.toLowerCase().contains(query) ||
                           episode.code.toLowerCase().contains(query);
-                      final matchesCode = episode.code.toLowerCase().contains(
-                        episodeFilter,
-                      );
-                      return matchesName && matchesCode;
                     })
                     .toList(growable: false))
             .toList(growable: true);

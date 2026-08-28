@@ -5,7 +5,8 @@ import { RickAndMortyHttpClient } from "./infrastructure/rick-and-morty/client.j
 const gateway = new RickAndMortyHttpClient({
   baseUrl: env.rickAndMortyApiUrl,
   timeoutMs: env.requestTimeoutMs,
-  cacheTtlMs: env.cacheTtlMs
+  cacheTtlMs: env.cacheTtlMs,
+  cacheMaxEntries: env.cacheMaxEntries
 });
 
 const app = createApp(env, gateway);

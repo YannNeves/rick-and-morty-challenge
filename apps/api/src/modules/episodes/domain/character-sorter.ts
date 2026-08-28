@@ -3,11 +3,10 @@ import type {
   SortOrder
 } from "./episode.models.js";
 import type { CharacterSummary } from "../../characters/domain/character.models.js";
-
-const collator = new Intl.Collator("pt-BR", {
-  sensitivity: "base",
-  numeric: true
-});
+import {
+  compareCharactersByName,
+  compareCharacterText
+} from "../../characters/domain/character-order.js";
 
 export const sortCharacters = (
   characters: CharacterSummary[],
@@ -21,6 +20,10 @@ export const sortCharacters = (
       return (left.id - right.id) * direction;
     }
 
-    return collator.compare(left[sortBy], right[sortBy]) * direction;
+    const comparison = sortBy === "name"
+      ? compareCharactersByName(left, right)
+      : compareCharacterText(left[sortBy], right[sortBy]) || left.id - right.id;
+
+    return comparison * direction;
   });
 };

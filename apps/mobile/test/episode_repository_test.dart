@@ -70,10 +70,4 @@ class FakeApiClient implements ApiClient {
       'characters': <Map<String, dynamic>>[],
     };
   }
-
-  @override
-  Future<void> postMap(
-    String path, {
-    required Map<String, dynamic> body,
-  }) async {}
 }

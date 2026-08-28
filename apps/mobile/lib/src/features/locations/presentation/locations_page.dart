@@ -79,22 +79,13 @@ class _LocationsPageState extends State<LocationsPage> {
         }
 
         final normalizedQuery = widget.searchQuery.toLowerCase();
-        final typeFilter = widget.filters['type'] ?? '';
-        final dimensionFilter = widget.filters['dimension'] ?? '';
         final filteredLocations = (normalizedQuery.isEmpty
                 ? _controller.locations
                 : _controller.locations
                     .where((location) {
-                      final matchesName = location.name.toLowerCase().contains(
+                      return location.name.toLowerCase().contains(
                         normalizedQuery,
                       );
-                      final matchesType = location.type.toLowerCase().contains(
-                        typeFilter,
-                      );
-                      final matchesDimension = location.dimension
-                          .toLowerCase()
-                          .contains(dimensionFilter);
-                      return matchesName && matchesType && matchesDimension;
                     })
                     .toList(growable: false))
             .toList(growable: true);

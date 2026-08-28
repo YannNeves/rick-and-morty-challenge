@@ -6,7 +6,10 @@ type CacheEntry<T> = {
 export class InMemoryCache<T> {
   private readonly entries = new Map<string, CacheEntry<T>>();
 
-  constructor(private readonly ttlMs: number) {}
+  constructor(
+    private readonly ttlMs: number,
+    private readonly maxEntries = 500
+  ) {}
 
   get(key: string): T | undefined {
     const entry = this.entries.get(key);
@@ -24,6 +27,15 @@ export class InMemoryCache<T> {
   }
 
   set(key: string, value: T): void {
+    this.removeExpiredEntries();
+    this.entries.delete(key);
+
+    while (this.entries.size >= this.maxEntries) {
+      const oldestKey = this.entries.keys().next().value as string | undefined;
+      if (oldestKey === undefined) break;
+      this.entries.delete(oldestKey);
+    }
+
     this.entries.set(key, {
       expiresAt: Date.now() + this.ttlMs,
       value
@@ -32,5 +44,14 @@ export class InMemoryCache<T> {
 
   clear(): void {
     this.entries.clear();
+  }
+
+  private removeExpiredEntries(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.entries) {
+      if (entry.expiresAt <= now) {
+        this.entries.delete(key);
+      }
+    }
   }
 }

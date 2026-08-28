@@ -30,9 +30,24 @@ test("listCharacters delegates filters and returns the domain page", async () =>
 
 test("listAllCharacters aggregates every page and sorts by name", async () => {
   const gateway = new FakeGateway();
+  gateway.listCharacters = async (filters) => {
+    gateway.requestedPages.push(filters.page);
+    return {
+      page: filters.page,
+      totalPages: 2,
+      totalItems: 2,
+      hasNextPage: filters.page === 1,
+      hasPreviousPage: filters.page > 1,
+      characters: [
+        filters.page === 1
+          ? { ...summary, id: 2, name: "Zeta" }
+          : { ...summary, id: 1, name: "Amy" }
+      ]
+    };
+  };
   const result = await new CharacterService(gateway).listAllCharacters();
   assert.deepEqual(gateway.requestedPages, [1, 2]);
-  assert.equal(result.length, 2);
+  assert.deepEqual(result.map((character) => character.name), ["Amy", "Zeta"]);
 });
 
 test("getCharactersBatch deduplicates ids and preserves requested order", async () => {

@@ -13,6 +13,9 @@ import type {
   EpisodeCharactersGateway,
   EpisodesGateway
 } from "./episodes.gateway.js";
+import { mapWithConcurrency } from "../../../shared/async/map-with-concurrency.js";
+
+const PAGE_CONCURRENCY = 4;
 
 export type EpisodeDetailsOptions = {
   sortCharactersBy?: CharacterSortField;
@@ -36,10 +39,12 @@ export class EpisodeService {
 
   async listAllEpisodes(): Promise<EpisodeSummary[]> {
     const firstPage = await this.episodesGateway.listEpisodes({ page: 1 });
-    const remainingPages = await Promise.all(
+    const remainingPages = await mapWithConcurrency(
       Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
-        this.episodesGateway.listEpisodes({ page: index + 2 })
-      )
+        index + 2
+      ),
+      PAGE_CONCURRENCY,
+      (page) => this.episodesGateway.listEpisodes({ page })
     );
     return [firstPage, ...remainingPages]
       .flatMap((page) => page.episodes)
