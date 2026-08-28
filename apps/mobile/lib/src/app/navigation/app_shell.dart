@@ -87,6 +87,8 @@ class AppShell extends StatelessWidget {
     if (destination == AppDestination.characters) {
       return CharactersPage(
         characterRepository: characterRepository,
+        episodeRepository: episodeRepository,
+        locationRepository: locationRepository,
         searchQuery: viewModel.searchQuery,
       );
     }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../characters/data/character_repository.dart';
+import '../../../characters/domain/character_models.dart';
+import '../../../characters/presentation/character_details_page.dart';
 import '../../../episodes/data/episode_repository.dart';
-import '../../../episodes/domain/episode_models.dart';
+import '../../../episodes/domain/episode_models.dart' hide CharacterSummary;
 import '../../../episodes/presentation/episode_details_page.dart';
 import '../../../locations/data/location_repository.dart';
 import '../../../locations/domain/location_models.dart';
@@ -89,6 +91,7 @@ class _HomeViewState extends State<HomeView> {
                 errorMessage: _viewModel.charactersErrorMessage,
                 onRetry: _viewModel.loadCharacters,
                 onShowAll: widget.onShowAllCharacters,
+                onCharacterSelected: _openCharacter,
               ),
             ],
           ),
@@ -115,6 +118,20 @@ class _HomeViewState extends State<HomeView> {
         builder:
             (_) => LocationDetailsPage(
               location: location,
+              locationRepository: widget.locationRepository,
+            ),
+      ),
+    );
+  }
+
+  void _openCharacter(CharacterSummary character) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => CharacterDetailsPage(
+              character: character,
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
               locationRepository: widget.locationRepository,
             ),
       ),
