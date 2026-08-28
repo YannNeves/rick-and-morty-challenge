@@ -101,6 +101,21 @@ paths:
           description: Location page
         "400":
           description: Invalid pagination
+  /locations/batch:
+    get:
+      summary: Get multiple locations
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "3,21"
+      responses:
+        "200":
+          description: Ordered location collection
+        "400":
+          description: Invalid or oversized id list
   /locations/{id}:
     get:
       summary: Get location details with sorted residents

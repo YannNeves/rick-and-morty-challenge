@@ -138,6 +138,17 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     return toLocation(await this.getJson<RickAndMortyLocation>(`/location/${id}`));
   }
 
+  async getLocations(ids: number[]): Promise<Location[]> {
+    if (ids.length === 0) return [];
+
+    const uniqueIds = [...new Set(ids)];
+    const response = await this.getJson<RickAndMortyLocation | RickAndMortyLocation[]>(
+      `/location/${uniqueIds.join(",")}`
+    );
+
+    return (Array.isArray(response) ? response : [response]).map(toLocation);
+  }
+
   async getEpisode(id: number): Promise<Episode> {
     return toEpisode(await this.getJson<RickAndMortyEpisode>(`/episode/${id}`));
   }
