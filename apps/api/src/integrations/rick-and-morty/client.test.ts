@@ -167,6 +167,20 @@ test("client gets a single character by id", async () => {
   assert.equal(new URL(requestedUrl).pathname, "/api/character/2");
 });
 
+test("client maps a missing character to not found", async () => {
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => jsonResponse({ error: "not found" }, 404)
+  });
+
+  await assert.rejects(
+    client.getCharacter(999),
+    (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND"
+  );
+});
+
 test("client normalizes single and multiple character responses", async () => {
   const responseBody = {
     id: 1,
