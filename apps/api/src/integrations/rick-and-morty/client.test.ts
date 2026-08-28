@@ -137,3 +137,32 @@ test("client forwards character pagination and filters", async () => {
   assert.equal(url.searchParams.get("species"), "human");
   assert.equal(url.searchParams.get("gender"), "male");
 });
+
+test("client gets a single character by id", async () => {
+  let requestedUrl = "";
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async (input) => {
+      requestedUrl = input.toString();
+      return jsonResponse({
+        id: 2,
+        name: "Morty Smith",
+        status: "Alive",
+        species: "Human",
+        type: "",
+        gender: "Male",
+        origin: { name: "Earth", url: "" },
+        location: { name: "Earth", url: "" },
+        image: "",
+        episode: [],
+        url: "",
+        created: ""
+      });
+    }
+  });
+
+  assert.equal((await client.getCharacter(2)).name, "Morty Smith");
+  assert.equal(new URL(requestedUrl).pathname, "/api/character/2");
+});

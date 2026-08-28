@@ -19,3 +19,18 @@ export type CharacterListResult = {
   hasPreviousPage: boolean;
   characters: CharacterSummary[];
 };
+
+export type CharacterReference = {
+  id: number | null;
+  name: string;
+};
+
+export type CharacterDetails = Omit<
+  CharacterSummary,
+  "origin" | "location" | "episodeCount"
+> & {
+  origin: CharacterReference;
+  location: CharacterReference;
+  episodeCount: number;
+  episodeIds: number[];
+};

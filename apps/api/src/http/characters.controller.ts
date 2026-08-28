@@ -29,4 +29,9 @@ export class CharactersController {
 
     res.json(result);
   };
+
+  details = async (req: Request, res: Response): Promise<void> => {
+    const id = parsePositiveInt(req.params.id, "id");
+    res.json(await this.characterService.getCharacterDetails(id));
+  };
 }

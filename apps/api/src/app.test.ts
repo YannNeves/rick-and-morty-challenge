@@ -42,6 +42,10 @@ class FakeGateway implements RickAndMortyGateway {
     };
   }
 
+  async getCharacter(): Promise<RickAndMortyCharacter> {
+    return (await this.getCharacters())[0]!;
+  }
+
   async listEpisodes(
     _filters: EpisodeListFilters
   ): Promise<RickAndMortyPage<RickAndMortyEpisode>> {
@@ -156,6 +160,32 @@ test("GET /api/v1/characters returns a mapped character page", async () => {
 test("GET /api/v1/characters rejects invalid enum filters", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/characters?status=sleeping`);
+    const body = (await response.json()) as { error: { code: string } };
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error.code, "BAD_REQUEST");
+  });
+});
+
+test("GET /api/v1/characters/:id returns character details", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/characters/1`);
+    const body = (await response.json()) as {
+      name: string;
+      episodeIds: number[];
+      origin: { id: number | null; name: string };
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(body.name, "Rick Sanchez");
+    assert.deepEqual(body.episodeIds, []);
+    assert.deepEqual(body.origin, { id: null, name: "Earth" });
+  });
+});
+
+test("GET /api/v1/characters/:id rejects invalid ids", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/characters/zero`);
     const body = (await response.json()) as { error: { code: string } };
 
     assert.equal(response.status, 400);

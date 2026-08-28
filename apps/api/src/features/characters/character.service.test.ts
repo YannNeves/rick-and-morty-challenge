@@ -36,6 +36,10 @@ class FakeGateway implements CharactersGateway {
       results: [character]
     };
   }
+
+  async getCharacter(): Promise<RickAndMortyCharacter> {
+    return character;
+  }
 }
 
 test("listCharacters maps pagination and character summaries", async () => {
@@ -66,4 +70,24 @@ test("listCharacters maps pagination and character summaries", async () => {
     location: "Citadel of Ricks",
     episodeCount: 2
   });
+});
+
+test("getCharacterDetails maps relation and episode ids", async () => {
+  const service = new CharacterService(new FakeGateway());
+
+  const result = await service.getCharacterDetails(1);
+
+  assert.deepEqual(result.origin, { id: 1, name: "Earth (C-137)" });
+  assert.deepEqual(result.location, { id: 3, name: "Citadel of Ricks" });
+  assert.deepEqual(result.episodeIds, [1, 2]);
+  assert.equal(result.episodeCount, 2);
+});
+
+test("getCharacterDetails rejects invalid ids", async () => {
+  const service = new CharacterService(new FakeGateway());
+
+  await assert.rejects(
+    service.getCharacterDetails(0),
+    (error: unknown) => error instanceof Error && error.message.includes("positive integer")
+  );
 });
