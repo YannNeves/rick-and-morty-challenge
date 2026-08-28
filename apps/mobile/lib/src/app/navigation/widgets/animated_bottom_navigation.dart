@@ -11,7 +11,7 @@ class AnimatedBottomNavigation extends StatelessWidget {
     super.key,
   });
 
-  static const _height = 126.0;
+  static const _height = 125.0;
   static const _waveDiameter = 108.0;
 
   final int selectedIndex;
@@ -35,7 +35,7 @@ class AnimatedBottomNavigation extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned(
-                top: 24,
+                top: 44,
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -52,14 +52,23 @@ class AnimatedBottomNavigation extends StatelessWidget {
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 420),
                 curve: Curves.easeInOutCubic,
-                top: -44,
+                top: 24,
                 left: notchCenter - (_waveDiameter / 2),
                 width: _waveDiameter,
-                height: _waveDiameter,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    shape: BoxShape.circle,
+                height: 60,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.bottomCenter,
+                    minWidth: _waveDiameter,
+                    maxWidth: _waveDiameter,
+                    minHeight: _waveDiameter,
+                    maxHeight: _waveDiameter,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -121,7 +130,7 @@ class _NavigationItem extends StatelessWidget {
               child: AnimatedPadding(
                 duration: const Duration(milliseconds: 360),
                 curve: Curves.easeOutBack,
-                padding: EdgeInsets.only(top: selected ? 2 : 43),
+                padding: EdgeInsets.only(top: selected ? 50 : 65),
                 child: AnimatedScale(
                   scale: selected ? 1.12 : 1,
                   duration: const Duration(milliseconds: 320),
@@ -137,7 +146,7 @@ class _NavigationItem extends StatelessWidget {
             Positioned(
               left: 2,
               right: 2,
-              bottom: 13,
+              bottom: 5,
               child: AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 220),
                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(

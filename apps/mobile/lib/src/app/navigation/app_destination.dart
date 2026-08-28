@@ -32,4 +32,11 @@ enum AppDestination {
   final String routeLabel;
   final String iconAsset;
   final bool isRasterIcon;
+
+  String get searchHint => switch (this) {
+    AppDestination.home => '',
+    AppDestination.planets => 'Busque por planeta',
+    AppDestination.episodes => 'Busque por episódio',
+    AppDestination.characters => 'Busque por personagem',
+  };
 }

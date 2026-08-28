@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import 'src/app/app.dart';
 import 'src/app/app_config.dart';
 import 'src/core/network/http_api_client.dart';
+import 'src/features/characters/data/character_repository.dart';
 import 'src/features/episodes/data/episode_repository.dart';
+import 'src/features/locations/data/location_repository.dart';
 
 void main() {
   final config = AppConfig.fromEnvironment();
@@ -14,6 +16,10 @@ void main() {
   );
 
   runApp(
-    RickAndMortyApp(episodeRepository: RemoteEpisodeRepository(apiClient)),
+    RickAndMortyApp(
+      characterRepository: RemoteCharacterRepository(apiClient),
+      episodeRepository: RemoteEpisodeRepository(apiClient),
+      locationRepository: RemoteLocationRepository(apiClient),
+    ),
   );
 }
