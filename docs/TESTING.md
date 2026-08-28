@@ -28,8 +28,7 @@ Cobertura principal:
 
 - parsing dos DTOs da API;
 - repository enviando query de paginacao e ordenacao;
-- controller carregando dados e disparando analytics;
-- analytics sem bloquear a atualizacao da interface;
+- controllers carregando listas e detalhes;
 - widget test abrindo um episodio e exibindo personagens.
 
 ## Builds de entrega

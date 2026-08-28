@@ -65,27 +65,6 @@ Exemplo:
 curl "http://localhost:3000/api/v1/episodes/28?sortCharactersBy=name&characterOrder=asc"
 ```
 
-## `POST /analytics/events`
-
-Recebe eventos do app.
-
-Eventos aceitos:
-
-- `app_opened`
-- `episode_list_viewed`
-- `episode_details_viewed`
-- `character_sort_changed`
-
-```json
-{
-  "name": "episode_details_viewed",
-  "properties": {
-    "episodeId": 28,
-    "sortBy": "name"
-  }
-}
-```
-
 ## Erros
 
 Erros seguem o formato:

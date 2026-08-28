@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../analytics/analytics_tracker.dart';
 import '../data/episode_repository.dart';
 import '../domain/character_sort.dart';
 import '../domain/episode_models.dart';
@@ -12,13 +11,11 @@ class EpisodeDetailsPage extends StatefulWidget {
   const EpisodeDetailsPage({
     required this.episode,
     required this.episodeRepository,
-    required this.analyticsTracker,
     super.key,
   });
 
   final EpisodeSummary episode;
   final EpisodeRepository episodeRepository;
-  final AnalyticsTracker analyticsTracker;
 
   @override
   State<EpisodeDetailsPage> createState() => _EpisodeDetailsPageState();
@@ -33,7 +30,6 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
     _controller = EpisodeDetailsController(
       episodeId: widget.episode.id,
       episodeRepository: widget.episodeRepository,
-      analyticsTracker: widget.analyticsTracker,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) => _controller.load());
   }
