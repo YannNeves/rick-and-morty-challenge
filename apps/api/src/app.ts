@@ -1,17 +1,18 @@
 import express from "express";
 
 import type { AppEnv } from "./config/env.js";
+import type { CharactersGateway } from "./modules/characters/application/characters.gateway.js";
 import type {
-  CharactersGateway,
-  RickAndMortyGateway
-} from "./integrations/rick-and-morty/types.js";
-import { cors, securityHeaders } from "./shared/http/security.js";
-import { errorHandler, notFoundHandler } from "./shared/http/error-handler.js";
-import { createRouter } from "./http/routes.js";
+  EpisodeCharactersGateway,
+  EpisodesGateway
+} from "./modules/episodes/application/episodes.gateway.js";
+import { cors, securityHeaders } from "./presentation/http/middleware/security.js";
+import { errorHandler, notFoundHandler } from "./presentation/http/middleware/error-handler.js";
+import { createApiRouter } from "./presentation/http/api.routes.js";
 
 export const createApp = (
   env: AppEnv,
-  gateway: RickAndMortyGateway & CharactersGateway
+  gateway: CharactersGateway & EpisodesGateway & EpisodeCharactersGateway
 ) => {
   const app = express();
 
@@ -28,7 +29,7 @@ export const createApp = (
     });
   });
 
-  app.use("/api/v1", createRouter(gateway));
+  app.use("/api/v1", createApiRouter(gateway));
   app.use(notFoundHandler);
   app.use(errorHandler);
 
