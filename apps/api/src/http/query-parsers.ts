@@ -47,6 +47,30 @@ export const parseOptionalString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+export const parseIdList = (
+  value: unknown,
+  fieldName: string,
+  maxItems: number
+): number[] => {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw badRequest(`${fieldName} must be a comma-separated list of ids`);
+  }
+
+  const parts = value.split(",").map((part) => part.trim());
+  if (parts.length > maxItems) {
+    throw badRequest(`${fieldName} exceeds the maximum number of items`, {
+      maxItems
+    });
+  }
+
+  const ids = parts.map(Number);
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0)) {
+    throw badRequest(`${fieldName} must contain only positive integers`);
+  }
+
+  return [...new Set(ids)];
+};
+
 const parseEnum = <T extends string>(
   value: unknown,
   fieldName: string,

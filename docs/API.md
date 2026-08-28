@@ -21,6 +21,25 @@ Exemplo:
 curl "http://localhost:3000/api/v1/characters?page=1&name=rick&status=alive"
 ```
 
+## `GET /characters/:id`
+
+Retorna os detalhes de um personagem. Origem e localização incluem os IDs
+extraídos dos relacionamentos externos; `episodeIds` permite navegar para os
+episódios sem expor URLs da API upstream.
+
+```bash
+curl "http://localhost:3000/api/v1/characters/2"
+```
+
+## `GET /characters/batch`
+
+Retorna até 100 personagens por chamada. `ids` é obrigatório, aceita somente
+inteiros positivos e remove duplicidades preservando a ordem solicitada.
+
+```bash
+curl "http://localhost:3000/api/v1/characters/batch?ids=1,183"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.

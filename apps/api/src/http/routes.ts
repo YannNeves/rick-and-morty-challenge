@@ -21,6 +21,8 @@ export const createRouter = (
   const charactersController = new CharactersController(new CharacterService(gateway));
 
   router.get("/characters", asyncHandler(charactersController.list));
+  router.get("/characters/batch", asyncHandler(charactersController.batch));
+  router.get("/characters/:id", asyncHandler(charactersController.details));
   router.get("/episodes", asyncHandler(episodesController.list));
   router.get("/episodes/:id", asyncHandler(episodesController.details));
   router.post("/analytics/events", asyncHandler(analyticsController.track));

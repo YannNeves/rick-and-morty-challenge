@@ -4,12 +4,23 @@ import test from "node:test";
 import { AppError } from "../errors/app-error.js";
 import {
   parseCharacterGender,
-  parseCharacterStatus
+  parseCharacterStatus,
+  parseIdList
 } from "./query-parsers.js";
 
 test("character enum parsers normalize supported values", () => {
   assert.equal(parseCharacterStatus("Alive"), "alive");
   assert.equal(parseCharacterGender("GENDERLESS"), "genderless");
+});
+
+test("parseIdList deduplicates ids while preserving order", () => {
+  assert.deepEqual(parseIdList("3, 1,3,2", "ids", 10), [3, 1, 2]);
+});
+
+test("parseIdList rejects missing, invalid and oversized lists", () => {
+  assert.throws(() => parseIdList(undefined, "ids", 2), AppError);
+  assert.throws(() => parseIdList("1,zero", "ids", 2), AppError);
+  assert.throws(() => parseIdList("1,2,3", "ids", 2), AppError);
 });
 
 test("character enum parsers reject unsupported values", () => {

@@ -68,6 +68,10 @@ export class RickAndMortyHttpClient implements RickAndMortyGateway, CharactersGa
     );
   }
 
+  async getCharacter(id: number): Promise<RickAndMortyCharacter> {
+    return this.getJson<RickAndMortyCharacter>(`/character/${id}`);
+  }
+
   async getEpisode(id: number): Promise<RickAndMortyEpisode> {
     return this.getJson<RickAndMortyEpisode>(`/episode/${id}`);
   }

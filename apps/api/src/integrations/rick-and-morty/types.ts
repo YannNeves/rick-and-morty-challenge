@@ -61,6 +61,8 @@ export interface CharactersGateway {
   listCharacters(
     filters: CharacterListFilters
   ): Promise<RickAndMortyPage<RickAndMortyCharacter>>;
+  getCharacter(id: number): Promise<RickAndMortyCharacter>;
+  getCharacters(ids: number[]): Promise<RickAndMortyCharacter[]>;
 }
 
 export interface RickAndMortyGateway {
