@@ -9,8 +9,6 @@ class CharactersController extends ChangeNotifier {
   CharactersController({required CharacterRepository characterRepository})
     : _characterRepository = characterRepository;
 
-  static const _concurrentRequests = 5;
-
   final CharacterRepository _characterRepository;
 
   CharactersLoadStatus status = CharactersLoadStatus.idle;
@@ -23,28 +21,9 @@ class CharactersController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final firstPage = await _characterRepository.getCharacters();
-      final allCharacters = <CharacterSummary>[...firstPage.characters];
-
-      for (
-        var firstPageNumber = 2;
-        firstPageNumber <= firstPage.totalPages;
-        firstPageNumber += _concurrentRequests
-      ) {
-        final lastPageNumber = (firstPageNumber + _concurrentRequests - 1)
-            .clamp(firstPageNumber, firstPage.totalPages);
-        final pages = await Future.wait([
-          for (
-            var pageNumber = firstPageNumber;
-            pageNumber <= lastPageNumber;
-            pageNumber++
-          )
-            _characterRepository.getCharacters(page: pageNumber),
-        ]);
-        for (final page in pages) {
-          allCharacters.addAll(page.characters);
-        }
-      }
+      final allCharacters = <CharacterSummary>[
+        ...await _characterRepository.getAllCharacters(),
+      ];
 
       allCharacters.sort(
         (first, second) =>

@@ -21,13 +21,9 @@ class LocationsController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final firstPage = await _locationRepository.getLocations();
-      final allLocations = <LocationSummary>[...firstPage.locations];
-
-      for (var page = 2; page <= firstPage.totalPages; page++) {
-        final nextPage = await _locationRepository.getLocations(page: page);
-        allLocations.addAll(nextPage.locations);
-      }
+      final allLocations = <LocationSummary>[
+        ...await _locationRepository.getAllLocations(),
+      ];
 
       allLocations.sort(
         (first, second) =>

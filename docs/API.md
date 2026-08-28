@@ -63,6 +63,14 @@ Retorna a localizacao e seus residentes mapeados, ordenados por nome.
 curl "http://localhost:3000/api/v1/locations/3"
 ```
 
+## Coleções completas
+
+As telas de listagem usam uma única chamada ao backend. O backend consulta a primeira página no endpoint base da Rick and Morty API, agrega as páginas restantes e devolve a coleção ordenada.
+
+- `GET /characters/all`
+- `GET /episodes/all`
+- `GET /locations/all`
+
 ## `GET /locations/batch`
 
 Retorna ate 100 localizacoes, removendo duplicidades e preservando a ordem dos IDs.

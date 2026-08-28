@@ -38,6 +38,10 @@ export class EpisodesController {
     res.json(result);
   };
 
+  all = async (_req: Request, res: Response): Promise<void> => {
+    res.json({ episodes: await this.episodeService.listAllEpisodes() });
+  };
+
   batch = async (req: Request, res: Response): Promise<void> => {
     const ids = parseIdList(req.query.ids, "ids", EPISODE_BATCH_LIMIT);
     res.json({ episodes: await this.episodeService.getEpisodesBatch(ids) });

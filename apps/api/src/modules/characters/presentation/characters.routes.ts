@@ -10,6 +10,7 @@ export const createCharactersRouter = (gateway: CharactersGateway): Router => {
   const controller = new CharactersController(new CharacterService(gateway));
 
   router.get("/", asyncHandler(controller.list));
+  router.get("/all", asyncHandler(controller.all));
   router.get("/batch", asyncHandler(controller.batch));
   router.get("/:id", asyncHandler(controller.details));
 

@@ -10,8 +10,10 @@ const details: CharacterDetails = { ...summary, origin: { id: 1, name: "Earth (C
 
 class FakeGateway implements CharactersGateway {
   filters?: CharacterListFilters;
+  requestedPages: number[] = [];
   async listCharacters(filters: CharacterListFilters): Promise<CharacterListResult> {
     this.filters = filters;
+    this.requestedPages.push(filters.page);
     return { page: filters.page, totalPages: 2, totalItems: 1, hasNextPage: true, hasPreviousPage: false, characters: [summary] };
   }
   async getCharacter(): Promise<CharacterDetails> { return details; }
@@ -24,6 +26,13 @@ test("listCharacters delegates filters and returns the domain page", async () =>
   const result = await new CharacterService(gateway).listCharacters(filters);
   assert.deepEqual(gateway.filters, filters);
   assert.deepEqual(result.characters[0], summary);
+});
+
+test("listAllCharacters aggregates every page and sorts by name", async () => {
+  const gateway = new FakeGateway();
+  const result = await new CharacterService(gateway).listAllCharacters();
+  assert.deepEqual(gateway.requestedPages, [1, 2]);
+  assert.equal(result.length, 2);
 });
 
 test("getCharactersBatch deduplicates ids and preserves requested order", async () => {

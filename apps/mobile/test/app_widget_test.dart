@@ -40,7 +40,38 @@ void main() {
     expect(find.text('Rick Sanchez'), findsOneWidget);
     expect(find.byKey(const ValueKey('global-search-field')), findsNothing);
 
-    await tester.tap(find.text('Ver todos').at(1));
+    final locationLearnMore =
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('home-locations-list')),
+              matching: find.text('Saiba mais'),
+            )
+            .first;
+    await tester.ensureVisible(locationLearnMore);
+    await tester.pumpAndSettle();
+    await tester.tap(locationLearnMore);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('location-details-page')), findsOneWidget);
+    expect(find.text('Residentes'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    final locationsHeader =
+        find
+            .ancestor(
+              of: find.byKey(const ValueKey('locations-section-title')),
+              matching: find.byType(Row),
+            )
+            .first;
+    final locationsShowAll = find.descendant(
+      of: locationsHeader,
+      matching: find.text('Ver todos'),
+    );
+    await tester.ensureVisible(locationsShowAll);
+    await tester.pumpAndSettle();
+    await tester.tap(locationsShowAll);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('locations-page-list')), findsOneWidget);
@@ -65,6 +96,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Earth (C-137)'), findsOneWidget);
+
+    await tester.tap(find.text('Earth (C-137)'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('location-details-page')), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Home'));
     await tester.pumpAndSettle();
@@ -151,6 +190,11 @@ void main() {
 
 class FakeCharacterRepository implements CharacterRepository {
   @override
+  Future<List<CharacterSummary>> getAllCharacters() async {
+    return (await getCharacters()).characters;
+  }
+
+  @override
   Future<CharacterListPage> getCharacters({int page = 1}) async {
     return CharacterListPage(
       page: page,
@@ -178,6 +222,36 @@ class FakeCharacterRepository implements CharacterRepository {
 
 class FakeLocationRepository implements LocationRepository {
   @override
+  Future<List<LocationSummary>> getAllLocations() async {
+    return (await getLocations()).locations;
+  }
+
+  @override
+  Future<LocationDetails> getLocationDetails(int id) async {
+    return const LocationDetails(
+      id: 1,
+      name: 'Earth (C-137)',
+      type: 'Planet',
+      dimension: 'Dimension C-137',
+      residentCount: 1,
+      residents: [
+        CharacterSummary(
+          id: 1,
+          name: 'Rick Sanchez',
+          status: 'Alive',
+          species: 'Human',
+          type: '',
+          gender: 'Male',
+          image: 'https://example.com/rick.png',
+          origin: 'Earth (C-137)',
+          location: 'Citadel of Ricks',
+          episodeCount: 51,
+        ),
+      ],
+    );
+  }
+
+  @override
   Future<LocationListPage> getLocations({int page = 1}) async {
     return LocationListPage(
       page: page,
@@ -199,6 +273,11 @@ class FakeLocationRepository implements LocationRepository {
 }
 
 class FakeEpisodeRepository implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    return (await getEpisodes()).episodes;
+  }
+
   @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async {
     return EpisodeListPage(

@@ -20,6 +20,11 @@ void main() {
 
 class FakeEpisodeRepository implements EpisodeRepository {
   @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    return (await getEpisodes()).episodes;
+  }
+
+  @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async {
     return EpisodeListPage(
       page: page,

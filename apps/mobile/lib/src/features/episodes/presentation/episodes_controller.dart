@@ -38,21 +38,13 @@ class EpisodesController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final firstPage = await _episodeRepository.getEpisodes();
-      final allEpisodes = <EpisodeSummary>[...firstPage.episodes];
-
-      for (
-        var pageNumber = 2;
-        pageNumber <= firstPage.totalPages;
-        pageNumber++
-      ) {
-        final nextPage = await _episodeRepository.getEpisodes(page: pageNumber);
-        allEpisodes.addAll(nextPage.episodes);
-      }
+      final allEpisodes = <EpisodeSummary>[
+        ...await _episodeRepository.getAllEpisodes(),
+      ];
 
       allEpisodes.sort((first, second) => first.code.compareTo(second.code));
       episodes = List.unmodifiable(allEpisodes);
-      page = firstPage;
+      page = null;
       status = LoadStatus.success;
       notifyListeners();
     } catch (_) {

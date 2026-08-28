@@ -5,6 +5,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../episodes/presentation/widgets/empty_error_state.dart';
 import '../data/location_repository.dart';
 import '../domain/location_models.dart';
+import 'location_details_page.dart';
 import 'locations_controller.dart';
 
 class LocationsPage extends StatefulWidget {
@@ -101,11 +102,27 @@ class _LocationsPageState extends State<LocationsPage> {
                 return const _NoSearchResults();
               }
 
-              return _LocationListCard(location: filteredLocations[index - 1]);
+              final location = filteredLocations[index - 1];
+              return _LocationListCard(
+                location: location,
+                onTap: () => _openLocation(location),
+              );
             },
           ),
         );
       },
+    );
+  }
+
+  void _openLocation(LocationSummary location) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => LocationDetailsPage(
+              location: location,
+              locationRepository: widget.locationRepository,
+            ),
+      ),
     );
   }
 }
@@ -163,61 +180,70 @@ class _LocationsHeader extends StatelessWidget {
 }
 
 class _LocationListCard extends StatelessWidget {
-  const _LocationListCard({required this.location});
+  const _LocationListCard({required this.location, required this.onTap});
 
   final LocationSummary location;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final foreground = isDark ? AppColors.white : AppColors.darkGray;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkGray : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return Material(
+      color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              'assets/branding/planet.svg',
-              width: 52,
-              height: 52,
-              colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+        padding: EdgeInsets.zero,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/branding/planet.svg',
+                  width: 52,
+                  height: 52,
+                  colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        location.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: AppColors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        location.type,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${location.dimension} • ${location.residentCount} residentes',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    location.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.blue,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    location.type,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${location.dimension} • ${location.residentCount} residentes',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

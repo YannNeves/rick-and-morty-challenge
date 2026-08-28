@@ -3,6 +3,8 @@ import '../domain/location_models.dart';
 
 abstract interface class LocationRepository {
   Future<LocationListPage> getLocations({int page = 1});
+  Future<List<LocationSummary>> getAllLocations();
+  Future<LocationDetails> getLocationDetails(int id);
 }
 
 class RemoteLocationRepository implements LocationRepository {
@@ -17,5 +19,23 @@ class RemoteLocationRepository implements LocationRepository {
       query: {'page': '$page'},
     );
     return LocationListPage.fromJson(json);
+  }
+
+  @override
+  Future<List<LocationSummary>> getAllLocations() async {
+    final json = await _apiClient.getMap('/locations/all');
+    final items = json['locations'] as List<dynamic>? ?? const [];
+    return items
+        .map(
+          (item) =>
+              LocationSummary.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<LocationDetails> getLocationDetails(int id) async {
+    final json = await _apiClient.getMap('/locations/$id');
+    return LocationDetails.fromJson(json);
   }
 }
