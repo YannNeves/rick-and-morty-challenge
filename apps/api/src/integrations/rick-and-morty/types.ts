@@ -45,6 +45,24 @@ export type EpisodeListFilters = {
   episode?: string;
 };
 
+export type CharacterStatus = "alive" | "dead" | "unknown";
+export type CharacterGender = "female" | "male" | "genderless" | "unknown";
+
+export type CharacterListFilters = {
+  page: number;
+  name?: string;
+  status?: CharacterStatus;
+  species?: string;
+  type?: string;
+  gender?: CharacterGender;
+};
+
+export interface CharactersGateway {
+  listCharacters(
+    filters: CharacterListFilters
+  ): Promise<RickAndMortyPage<RickAndMortyCharacter>>;
+}
+
 export interface RickAndMortyGateway {
   listEpisodes(filters: EpisodeListFilters): Promise<RickAndMortyPage<RickAndMortyEpisode>>;
   getEpisode(id: number): Promise<RickAndMortyEpisode>;

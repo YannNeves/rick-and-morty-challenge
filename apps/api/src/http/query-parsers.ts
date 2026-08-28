@@ -3,6 +3,10 @@ import type {
   CharacterSortField,
   SortOrder
 } from "../features/episodes/episode.models.js";
+import type {
+  CharacterGender,
+  CharacterStatus
+} from "../integrations/rick-and-morty/types.js";
 
 const characterSortFields = new Set<CharacterSortField>([
   "name",
@@ -11,6 +15,13 @@ const characterSortFields = new Set<CharacterSortField>([
   "species"
 ]);
 const sortOrders = new Set<SortOrder>(["asc", "desc"]);
+const characterStatuses = new Set<CharacterStatus>(["alive", "dead", "unknown"]);
+const characterGenders = new Set<CharacterGender>([
+  "female",
+  "male",
+  "genderless",
+  "unknown"
+]);
 
 export const parsePositiveInt = (value: unknown, fieldName: string): number => {
   const normalized = Array.isArray(value) ? value[0] : value;
@@ -35,6 +46,29 @@ export const parseOptionalString = (value: unknown): string | undefined => {
   const trimmed = normalized.trim();
   return trimmed.length > 0 ? trimmed : undefined;
 };
+
+const parseEnum = <T extends string>(
+  value: unknown,
+  fieldName: string,
+  acceptedValues: Set<T>
+): T | undefined => {
+  const parsed = parseOptionalString(value)?.toLowerCase();
+  if (!parsed) {
+    return undefined;
+  }
+  if (!acceptedValues.has(parsed as T)) {
+    throw badRequest(`${fieldName} is invalid`, {
+      acceptedValues: [...acceptedValues]
+    });
+  }
+  return parsed as T;
+};
+
+export const parseCharacterStatus = (value: unknown): CharacterStatus | undefined =>
+  parseEnum(value, "status", characterStatuses);
+
+export const parseCharacterGender = (value: unknown): CharacterGender | undefined =>
+  parseEnum(value, "gender", characterGenders);
 
 export const parseCharacterSortField = (
   value: unknown

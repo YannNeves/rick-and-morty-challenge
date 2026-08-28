@@ -5,6 +5,43 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
 paths:
+  /characters:
+    get:
+      summary: List and filter characters
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [alive, dead, unknown]
+        - in: query
+          name: species
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: gender
+          schema:
+            type: string
+            enum: [female, male, genderless, unknown]
+      responses:
+        "200":
+          description: Character page
+        "400":
+          description: Invalid pagination or enum filter
   /episodes:
     get:
       summary: List episodes

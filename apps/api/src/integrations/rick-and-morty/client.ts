@@ -1,6 +1,8 @@
 import { notFound, upstreamError } from "../../errors/app-error.js";
 import { InMemoryCache } from "../../shared/cache/in-memory-cache.js";
 import type {
+  CharacterListFilters,
+  CharactersGateway,
   EpisodeListFilters,
   RickAndMortyCharacter,
   RickAndMortyEpisode,
@@ -19,9 +21,10 @@ type ClientConfig = {
 type CacheValue =
   | RickAndMortyEpisode
   | RickAndMortyCharacter[]
+  | RickAndMortyPage<RickAndMortyCharacter>
   | RickAndMortyPage<RickAndMortyEpisode>;
 
-export class RickAndMortyHttpClient implements RickAndMortyGateway {
+export class RickAndMortyHttpClient implements RickAndMortyGateway, CharactersGateway {
   private readonly cache: InMemoryCache<CacheValue>;
   private readonly fetchFn: typeof fetch;
 
@@ -45,6 +48,23 @@ export class RickAndMortyHttpClient implements RickAndMortyGateway {
 
     return this.getJson<RickAndMortyPage<RickAndMortyEpisode>>(
       `/episode?${searchParams.toString()}`
+    );
+  }
+
+  async listCharacters(
+    filters: CharacterListFilters
+  ): Promise<RickAndMortyPage<RickAndMortyCharacter>> {
+    const searchParams = new URLSearchParams({ page: String(filters.page) });
+
+    for (const key of ["name", "status", "species", "type", "gender"] as const) {
+      const value = filters[key];
+      if (value) {
+        searchParams.set(key, value);
+      }
+    }
+
+    return this.getJson<RickAndMortyPage<RickAndMortyCharacter>>(
+      `/character?${searchParams.toString()}`
     );
   }
 

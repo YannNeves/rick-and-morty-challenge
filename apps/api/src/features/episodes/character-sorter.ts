@@ -1,8 +1,8 @@
 import type {
   CharacterSortField,
-  CharacterSummary,
   SortOrder
 } from "./episode.models.js";
+import type { CharacterSummary } from "../characters/character.models.js";
 
 const collator = new Intl.Collator("pt-BR", {
   sensitivity: "base",

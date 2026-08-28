@@ -105,3 +105,35 @@ test("client maps missing upstream resources to not found", async () => {
     (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND"
   );
 });
+
+test("client forwards character pagination and filters", async () => {
+  let requestedUrl = "";
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async (input) => {
+      requestedUrl = input.toString();
+      return jsonResponse({
+        info: { count: 0, pages: 0, next: null, prev: null },
+        results: []
+      });
+    }
+  });
+
+  await client.listCharacters({
+    page: 2,
+    name: "rick",
+    status: "alive",
+    species: "human",
+    gender: "male"
+  });
+
+  const url = new URL(requestedUrl);
+  assert.equal(url.pathname, "/api/character");
+  assert.equal(url.searchParams.get("page"), "2");
+  assert.equal(url.searchParams.get("name"), "rick");
+  assert.equal(url.searchParams.get("status"), "alive");
+  assert.equal(url.searchParams.get("species"), "human");
+  assert.equal(url.searchParams.get("gender"), "male");
+});

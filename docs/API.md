@@ -2,6 +2,25 @@
 
 Base local: `http://localhost:3000/api/v1`
 
+## `GET /characters`
+
+Lista personagens paginados. A API externa retorna até 20 itens por página.
+
+Query params:
+
+- `page`: número positivo, padrão `1`.
+- `name`: nome parcial.
+- `status`: `alive`, `dead` ou `unknown`.
+- `species`: espécie.
+- `type`: tipo ou subespécie.
+- `gender`: `female`, `male`, `genderless` ou `unknown`.
+
+Exemplo:
+
+```bash
+curl "http://localhost:3000/api/v1/characters?page=1&name=rick&status=alive"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.
