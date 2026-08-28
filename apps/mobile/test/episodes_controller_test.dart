@@ -52,6 +52,7 @@ class FakeEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     throw UnimplementedError();
   }

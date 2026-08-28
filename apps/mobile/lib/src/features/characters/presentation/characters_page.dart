@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../core/ui/display_value.dart';
 import '../../episodes/data/episode_repository.dart';
 import '../../episodes/presentation/widgets/empty_error_state.dart';
 import '../../locations/data/location_repository.dart';
@@ -16,6 +18,7 @@ class CharactersPage extends StatefulWidget {
     required this.episodeRepository,
     required this.locationRepository,
     required this.searchQuery,
+    required this.filters,
     super.key,
   });
 
@@ -23,6 +26,7 @@ class CharactersPage extends StatefulWidget {
   final EpisodeRepository episodeRepository;
   final LocationRepository locationRepository;
   final String searchQuery;
+  final Map<String, String> filters;
 
   @override
   State<CharactersPage> createState() => _CharactersPageState();
@@ -30,6 +34,7 @@ class CharactersPage extends StatefulWidget {
 
 class _CharactersPageState extends State<CharactersPage> {
   late final CharactersController _controller;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -37,11 +42,27 @@ class _CharactersPageState extends State<CharactersPage> {
     _controller = CharactersController(
       characterRepository: widget.characterRepository,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _controller.loadAll());
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) =>
+          _controller.load(name: widget.searchQuery, filters: widget.filters),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant CharactersPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery ||
+        !mapEquals(oldWidget.filters, widget.filters)) {
+      _controller.load(name: widget.searchQuery, filters: widget.filters);
+    }
   }
 
   @override
   void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -60,49 +81,45 @@ class _CharactersPageState extends State<CharactersPage> {
           return EmptyErrorState(
             title: 'Personagens indisponíveis',
             message: _controller.errorMessage ?? 'Tente novamente.',
-            onRetry: _controller.loadAll,
+            onRetry:
+                () => _controller.load(
+                  name: widget.searchQuery,
+                  filters: widget.filters,
+                ),
           );
         }
 
         if (_controller.status == CharactersLoadStatus.success &&
             _controller.characters.isEmpty) {
-          return EmptyErrorState(
-            title: 'Nenhum personagem encontrado',
-            message: 'A API não retornou personagens.',
-            onRetry: _controller.loadAll,
-          );
+          return const _NoSearchResults();
         }
 
-        final query = widget.searchQuery.toLowerCase();
-        final filteredCharacters =
-            query.isEmpty
-                ? _controller.characters
-                : _controller.characters
-                    .where((character) {
-                      return [
-                        character.name,
-                        character.species,
-                        character.status,
-                        character.origin,
-                        character.location,
-                      ].any((value) => value.toLowerCase().contains(query));
-                    })
-                    .toList(growable: false);
-
         return RefreshIndicator(
-          onRefresh: _controller.loadAll,
+          onRefresh:
+              () => _controller.load(
+                name: widget.searchQuery,
+                filters: widget.filters,
+              ),
           child: ListView.separated(
             key: const ValueKey('characters-page-list'),
+            controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
             itemCount:
-                filteredCharacters.isEmpty ? 2 : filteredCharacters.length + 1,
+                _controller.characters.length +
+                1 +
+                (_controller.hasNextPage ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _CharactersHeader(count: filteredCharacters.length);
+                return const _CharactersHeader();
               }
-              if (filteredCharacters.isEmpty) return const _NoSearchResults();
-              final character = filteredCharacters[index - 1];
+              if (index > _controller.characters.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final character = _controller.characters[index - 1];
               return _CharacterCard(
                 character: character,
                 onTap: () => _openCharacter(character),
@@ -112,6 +129,12 @@ class _CharactersPageState extends State<CharactersPage> {
         );
       },
     );
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.extentAfter < 500) {
+      _controller.loadMore();
+    }
   }
 
   void _openCharacter(CharacterSummary character) {
@@ -130,9 +153,7 @@ class _CharactersPageState extends State<CharactersPage> {
 }
 
 class _CharactersHeader extends StatelessWidget {
-  const _CharactersHeader({required this.count});
-
-  final int count;
+  const _CharactersHeader();
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +169,6 @@ class _CharactersHeader extends StatelessWidget {
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
-          Text('$count encontrados'),
         ],
       ),
     );
@@ -225,7 +245,7 @@ class _CharacterCard extends StatelessWidget {
               _Attribute(
                 asset: 'assets/branding/planet.svg',
                 color: foreground,
-                text: character.origin,
+                text: displayValue(character.origin),
               ),
             ],
           ),
@@ -243,7 +263,7 @@ class _CharacterCard extends StatelessWidget {
   String _speciesLabel(String species) => switch (species.toLowerCase()) {
     'human' => 'Humano',
     'alien' => 'Alienígena',
-    _ => species,
+    _ => displayValue(species),
   };
 }
 

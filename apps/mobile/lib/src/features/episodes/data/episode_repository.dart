@@ -10,6 +10,7 @@ abstract interface class EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   });
 }
 
@@ -57,10 +58,14 @@ class RemoteEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     final json = await _apiClient.getMap(
       '/episodes/$episodeId',
-      query: {'sortCharactersBy': sortBy.apiValue, 'characterOrder': 'asc'},
+      query: {
+        'sortCharactersBy': sortBy.apiValue,
+        'characterOrder': order.apiValue,
+      },
     );
 
     return EpisodeDetails.fromJson(json);

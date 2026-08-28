@@ -16,4 +16,6 @@ build/
 .fvm/
 
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json

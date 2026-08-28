@@ -18,6 +18,7 @@ class EpisodeDetailsController extends ChangeNotifier {
   LoadStatus status = LoadStatus.idle;
   EpisodeDetails? details;
   CharacterSortBy sortBy = CharacterSortBy.name;
+  CharacterSortOrder sortOrder = CharacterSortOrder.ascending;
   String? errorMessage;
 
   Future<void> load() async {
@@ -29,6 +30,7 @@ class EpisodeDetailsController extends ChangeNotifier {
       details = await _episodeRepository.getEpisodeDetails(
         _episodeId,
         sortBy: sortBy,
+        order: sortOrder,
       );
       status = LoadStatus.success;
       notifyListeners();
@@ -39,12 +41,16 @@ class EpisodeDetailsController extends ChangeNotifier {
     }
   }
 
-  Future<void> changeSort(CharacterSortBy value) async {
-    if (value == sortBy) {
+  Future<void> changeSort(
+    CharacterSortBy value,
+    CharacterSortOrder order,
+  ) async {
+    if (value == sortBy && order == sortOrder) {
       return;
     }
 
     sortBy = value;
+    sortOrder = order;
     await load();
   }
 }

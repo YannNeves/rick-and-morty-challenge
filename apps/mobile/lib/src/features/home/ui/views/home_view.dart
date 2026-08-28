@@ -107,6 +107,8 @@ class _HomeViewState extends State<HomeView> {
             (_) => EpisodeDetailsPage(
               episode: episode,
               episodeRepository: widget.episodeRepository,
+              characterRepository: widget.characterRepository,
+              locationRepository: widget.locationRepository,
             ),
       ),
     );
@@ -119,6 +121,8 @@ class _HomeViewState extends State<HomeView> {
             (_) => LocationDetailsPage(
               location: location,
               locationRepository: widget.locationRepository,
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
             ),
       ),
     );

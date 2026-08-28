@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/navigation/widgets/app_search_bar.dart';
+import '../../characters/data/character_repository.dart';
+import '../../characters/domain/character_models.dart' as character_models;
+import '../../characters/presentation/character_details_page.dart';
 import '../../characters/presentation/widgets/character_card.dart';
+import '../../characters/presentation/widgets/character_sort_drawer.dart';
+import '../../locations/data/location_repository.dart';
 import '../data/episode_repository.dart';
 import '../domain/character_sort.dart';
 import '../domain/episode_models.dart';
@@ -13,11 +19,15 @@ class EpisodeDetailsPage extends StatefulWidget {
   const EpisodeDetailsPage({
     required this.episode,
     required this.episodeRepository,
+    required this.characterRepository,
+    required this.locationRepository,
     super.key,
   });
 
   final EpisodeSummary episode;
   final EpisodeRepository episodeRepository;
+  final CharacterRepository characterRepository;
+  final LocationRepository locationRepository;
 
   @override
   State<EpisodeDetailsPage> createState() => _EpisodeDetailsPageState();
@@ -25,6 +35,7 @@ class EpisodeDetailsPage extends StatefulWidget {
 
 class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
   late final EpisodeDetailsController _controller;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -48,6 +59,7 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
       appBar: AppBar(
         title: Text(
           '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+          style: const TextStyle(color: AppColors.blue),
         ),
       ),
       body: AnimatedBuilder(
@@ -71,6 +83,13 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
             return const SizedBox.shrink();
           }
 
+          final filteredCharacters = details.characters
+              .where(
+                (character) =>
+                    character.name.toLowerCase().contains(_searchQuery),
+              )
+              .toList(growable: false);
+
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -80,20 +99,41 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
                 ),
               ),
               SliverToBoxAdapter(
+                child: AppSearchBar(
+                  initialValue: '',
+                  hintText: 'Busque por personagem',
+                  onChanged: (value) {
+                    setState(() => _searchQuery = value.trim().toLowerCase());
+                  },
+                  hasActiveFilters:
+                      _controller.sortBy != CharacterSortBy.name ||
+                      _controller.sortOrder != CharacterSortOrder.ascending,
+                  onFilterPressed: _openOptions,
+                ),
+              ),
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: _SortControl(
-                    selected: _controller.sortBy,
-                    onChanged: _controller.changeSort,
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Personagens',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text('${filteredCharacters.length} encontrados'),
+                    ],
                   ),
                 ),
               ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                 sliver: SliverList.builder(
-                  itemCount: details.characters.length,
+                  itemCount: filteredCharacters.length,
                   itemBuilder: (context, index) {
-                    final character = details.characters[index];
+                    final character = filteredCharacters[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: CharacterCard(
@@ -102,6 +142,7 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
                         species: character.species,
                         image: character.image,
                         origin: character.origin,
+                        onTap: () => _openCharacter(character),
                       ),
                     );
                   },
@@ -110,6 +151,42 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Future<void> _openOptions() async {
+    final result = await showCharacterSortDrawer(
+      context,
+      initialSort: _controller.sortBy,
+      initialOrder: _controller.sortOrder,
+    );
+    if (result != null) {
+      await _controller.changeSort(result.sortBy, result.order);
+    }
+  }
+
+  void _openCharacter(CharacterSummary character) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => CharacterDetailsPage(
+              character: character_models.CharacterSummary(
+                id: character.id,
+                name: character.name,
+                status: character.status,
+                species: character.species,
+                type: character.type,
+                gender: character.gender,
+                image: character.image,
+                origin: character.origin,
+                location: character.location,
+                episodeCount: character.episodeCount,
+              ),
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
+              locationRepository: widget.locationRepository,
+            ),
       ),
     );
   }
@@ -169,7 +246,7 @@ class _EpisodeInformation extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(width: 2),
-        Icon(icon, size: 22, color: AppColors.blue),
+        Icon(icon, size: 22),
         const SizedBox(width: 10),
         Expanded(
           child: Text.rich(
@@ -190,41 +267,112 @@ class _EpisodeInformation extends StatelessWidget {
   }
 }
 
-class _SortControl extends StatelessWidget {
-  const _SortControl({required this.selected, required this.onChanged});
+class _SortOptions {
+  const _SortOptions(this.sortBy, this.order);
+  final CharacterSortBy sortBy;
+  final CharacterSortOrder order;
+}
 
-  final CharacterSortBy selected;
-  final ValueChanged<CharacterSortBy> onChanged;
+class _EpisodeCharactersOptionsDrawer extends StatefulWidget {
+  const _EpisodeCharactersOptionsDrawer({
+    required this.initialSort,
+    required this.initialOrder,
+  });
+  final CharacterSortBy initialSort;
+  final CharacterSortOrder initialOrder;
+  @override
+  State<_EpisodeCharactersOptionsDrawer> createState() =>
+      _EpisodeCharactersOptionsDrawerState();
+}
+
+class _EpisodeCharactersOptionsDrawerState
+    extends State<_EpisodeCharactersOptionsDrawer> {
+  late CharacterSortBy _sortBy = widget.initialSort;
+  late CharacterSortOrder _order = widget.initialOrder;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SegmentedButton<CharacterSortBy>(
-        segments: const [
-          ButtonSegment(
-            value: CharacterSortBy.name,
-            icon: Icon(Icons.sort_by_alpha),
-            label: Text('Nome'),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Limpar filtros',
+                onPressed:
+                    () => Navigator.of(context).pop(
+                      const _SortOptions(
+                        CharacterSortBy.name,
+                        CharacterSortOrder.ascending,
+                      ),
+                    ),
+                icon: const Icon(Icons.delete_outline),
+              ),
+              const Spacer(),
+              Text(
+                'Filtros e ordenação',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: 'Fechar',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
-          ButtonSegment(
-            value: CharacterSortBy.status,
-            icon: Icon(Icons.monitor_heart_outlined),
-            label: Text('Status'),
+          const SizedBox(height: 16),
+          Text('Ordenar por', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final option in CharacterSortBy.values)
+                ChoiceChip(
+                  label: Text(switch (option) {
+                    CharacterSortBy.name => 'Nome',
+                    CharacterSortBy.status => 'Status',
+                    CharacterSortBy.species => 'Espécie',
+                  }),
+                  selected: _sortBy == option,
+                  onSelected: (_) => setState(() => _sortBy = option),
+                ),
+            ],
           ),
-          ButtonSegment(
-            value: CharacterSortBy.species,
-            icon: Icon(Icons.category_outlined),
-            label: Text('Espécie'),
+          const SizedBox(height: 20),
+          Text('Ordem', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 10),
+          SegmentedButton<CharacterSortOrder>(
+            segments: const [
+              ButtonSegment(
+                value: CharacterSortOrder.ascending,
+                label: Text('Crescente'),
+              ),
+              ButtonSegment(
+                value: CharacterSortOrder.descending,
+                label: Text('Decrescente'),
+              ),
+            ],
+            selected: {_order},
+            onSelectionChanged:
+                (values) => setState(() => _order = values.first),
           ),
-          ButtonSegment(
-            value: CharacterSortBy.id,
-            icon: Icon(Icons.tag),
-            label: Text('ID'),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed:
+                  () =>
+                      Navigator.of(context).pop(_SortOptions(_sortBy, _order)),
+              child: const Text('Aplicar'),
+            ),
           ),
         ],
-        selected: {selected},
-        onSelectionChanged: (values) => onChanged(values.first),
       ),
     );
   }

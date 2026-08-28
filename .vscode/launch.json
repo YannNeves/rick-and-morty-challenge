@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API: Dev",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/api",
+      "command": "npm run dev"
+    },
+    {
+      "name": "Flutter: iOS",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "program": "${workspaceFolder}/apps/mobile/lib/main.dart",
+      "deviceId": "974E55F4-56C5-4C83-9C9B-0B8F311D065C",
+      "args": [
+        "--dart-define=API_BASE_URL=http://localhost:3000/api/v1"
+      ]
+    },
+    {
+      "name": "Flutter: Android",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "program": "${workspaceFolder}/apps/mobile/lib/main.dart",
+      "deviceId": "emulator-5554",
+      "args": [
+        "--dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1"
+      ]
+    },
+    {
+      "name": "Flutter: Web",
+      "type": "dart",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/mobile",
+      "program": "${workspaceFolder}/apps/mobile/lib/main.dart",
+      "deviceId": "chrome",
+      "args": [
+        "--dart-define=API_BASE_URL=http://localhost:3000/api/v1"
+      ]
+    }
+  ]
+}
