@@ -51,11 +51,12 @@ O fluxo de detalhes de episodio faz:
 
 ## Flutter
 
-O app segue separacao por feature:
+O cliente segue MVVM orientado por feature e as recomendacoes oficiais de
+arquitetura do Flutter. Views e ViewModels formam a camada de UI; repositories e
+services formam a camada de dados. A camada de dominio e opcional e so deve existir
+quando uma regra for complexa, reutilizada ou combinar mais de um repository.
 
-- `domain`: modelos e enums.
-- `data`: repository remoto.
-- `presentation`: controllers e paginas.
-- `core/network`: cliente HTTP.
-
-O estado usa `ChangeNotifier` para manter o projeto leve, sem acoplar uma biblioteca de estado onde o escopo ainda nao justifica.
+O estado usa `ChangeNotifier` e a composicao usa injecao por construtor para manter
+o projeto leve. A especificacao completa, incluindo estrutura, dependencias,
+nomenclatura e estrategia de testes, esta em
+[`FLUTTER_ARCHITECTURE.md`](FLUTTER_ARCHITECTURE.md).

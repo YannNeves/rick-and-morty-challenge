@@ -50,11 +50,19 @@ O SDK Flutter `3.47.2` e gerenciado pelo FVM. O build Android usa JDK 17.
 fvm use
 cd apps/mobile
 fvm flutter pub get
-fvm flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v1
+cd ../..
 ```
 
 No Android emulator, o app usa `http://10.0.2.2:3000/api/v1` por padrao.
 No iOS simulator e Web, usa `http://localhost:3000/api/v1`.
+
+Com um simulador ou dispositivo correspondente conectado, execute na raiz:
+
+```bash
+npm run mobile:run:ios
+npm run mobile:run:android
+npm run mobile:run:web
+```
 
 ## Testes
 

@@ -11,6 +11,8 @@
     "lint:api": "npm --prefix apps/api run lint",
     "mobile:analyze": "cd apps/mobile && fvm flutter analyze",
     "mobile:test": "cd apps/mobile && fvm flutter test",
+    "mobile:run:ios": "cd apps/mobile && fvm flutter run -d ios --dart-define=API_BASE_URL=http://localhost:3000/api/v1",
+    "mobile:run:android": "cd apps/mobile && fvm flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1",
     "mobile:run:web": "cd apps/mobile && fvm flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v1",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
