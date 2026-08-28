@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  const AppConfig({required this.apiBaseUrl, required this.analyticsEnabled});
+  const AppConfig({required this.apiBaseUrl});
 
   final String apiBaseUrl;
-  final bool analyticsEnabled;
 
   factory AppConfig.fromEnvironment() {
     const configuredApiUrl = String.fromEnvironment('API_BASE_URL');
@@ -12,10 +11,6 @@ class AppConfig {
     return AppConfig(
       apiBaseUrl:
           configuredApiUrl.isNotEmpty ? configuredApiUrl : _defaultApiBaseUrl(),
-      analyticsEnabled: const bool.fromEnvironment(
-        'ANALYTICS_ENABLED',
-        defaultValue: true,
-      ),
     );
   }
 

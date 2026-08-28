@@ -1,19 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import '../../analytics/analytics_tracker.dart';
 import '../data/episode_repository.dart';
 import '../domain/episode_models.dart';
 import 'load_status.dart';
 
 class EpisodesController extends ChangeNotifier {
-  EpisodesController({
-    required EpisodeRepository episodeRepository,
-    required AnalyticsTracker analyticsTracker,
-  }) : _episodeRepository = episodeRepository,
-       _analyticsTracker = analyticsTracker;
+  EpisodesController({required EpisodeRepository episodeRepository})
+    : _episodeRepository = episodeRepository;
 
   final EpisodeRepository _episodeRepository;
-  final AnalyticsTracker _analyticsTracker;
 
   LoadStatus status = LoadStatus.idle;
   EpisodeListPage? page;
@@ -27,14 +22,10 @@ class EpisodesController extends ChangeNotifier {
     try {
       page = await _episodeRepository.getEpisodes(page: pageNumber);
       status = LoadStatus.success;
-      await _analyticsTracker.track(
-        'episode_list_viewed',
-        properties: {'page': pageNumber},
-      );
+      notifyListeners();
     } catch (error) {
       status = LoadStatus.failure;
       errorMessage = 'Não foi possível carregar os episódios.';
-    } finally {
       notifyListeners();
     }
   }

@@ -5,6 +5,134 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
 paths:
+  /characters:
+    get:
+      summary: List and filter characters
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [alive, dead, unknown]
+        - in: query
+          name: species
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: gender
+          schema:
+            type: string
+            enum: [female, male, genderless, unknown]
+      responses:
+        "200":
+          description: Character page
+        "400":
+          description: Invalid pagination or enum filter
+  /characters/batch:
+    get:
+      summary: Get multiple characters
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "1,183"
+      responses:
+        "200":
+          description: Ordered character collection
+        "400":
+          description: Invalid or oversized id list
+  /characters/{id}:
+    get:
+      summary: Get character details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Character details with related resource ids
+        "400":
+          description: Invalid character id
+        "404":
+          description: Character not found
+  /locations:
+    get:
+      summary: List and filter locations
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: dimension
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Location page
+        "400":
+          description: Invalid pagination
+  /locations/batch:
+    get:
+      summary: Get multiple locations
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "3,21"
+      responses:
+        "200":
+          description: Ordered location collection
+        "400":
+          description: Invalid or oversized id list
+  /locations/{id}:
+    get:
+      summary: Get location details with sorted residents
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Location details with residents sorted by name
+        "400":
+          description: Invalid location id
+        "404":
+          description: Location not found
   /episodes:
     get:
       summary: List episodes
@@ -26,6 +154,21 @@ paths:
       responses:
         "200":
           description: Episode page
+  /episodes/batch:
+    get:
+      summary: Get multiple episodes
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "10,28"
+      responses:
+        "200":
+          description: Ordered episode summary collection
+        "400":
+          description: Invalid or oversized id list
   /episodes/{id}:
     get:
       summary: Get episode details with sorted characters
@@ -55,27 +198,3 @@ paths:
           description: Invalid request
         "404":
           description: Episode not found
-  /analytics/events:
-    post:
-      summary: Track app analytics event
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name]
-              properties:
-                name:
-                  type: string
-                  enum:
-                    - app_opened
-                    - episode_list_viewed
-                    - episode_details_viewed
-                    - character_sort_changed
-                properties:
-                  type: object
-                  additionalProperties: true
-      responses:
-        "202":
-          description: Event accepted

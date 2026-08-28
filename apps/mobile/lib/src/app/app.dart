@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../features/analytics/analytics_tracker.dart';
 import '../features/episodes/data/episode_repository.dart';
 import '../features/episodes/presentation/episodes_page.dart';
 
 class RickAndMortyApp extends StatelessWidget {
-  const RickAndMortyApp({
-    required this.episodeRepository,
-    required this.analyticsTracker,
-    super.key,
-  });
+  const RickAndMortyApp({required this.episodeRepository, super.key});
 
   final EpisodeRepository episodeRepository;
-  final AnalyticsTracker analyticsTracker;
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +27,12 @@ class RickAndMortyApp extends StatelessWidget {
           elevation: 0,
           scrolledUnderElevation: 1,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
-      home: EpisodesPage(
-        episodeRepository: episodeRepository,
-        analyticsTracker: analyticsTracker,
-      ),
+      home: EpisodesPage(episodeRepository: episodeRepository),
     );
   }
 }
