@@ -5,6 +5,8 @@ import '../../../episodes/data/episode_repository.dart';
 import '../../../episodes/domain/episode_models.dart';
 import '../../../episodes/presentation/episode_details_page.dart';
 import '../../../locations/data/location_repository.dart';
+import '../../../locations/domain/location_models.dart';
+import '../../../locations/presentation/location_details_page.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/characters_section.dart';
 import '../widgets/episodes_section.dart';
@@ -78,7 +80,7 @@ class _HomeViewState extends State<HomeView> {
                 errorMessage: _viewModel.locationsErrorMessage,
                 onRetry: _viewModel.loadLocations,
                 onShowAll: widget.onShowAllLocations,
-                onLocationSelected: (_) => widget.onShowAllLocations(),
+                onLocationSelected: _openLocation,
               ),
               const SizedBox(height: 32),
               CharactersSection(
@@ -102,6 +104,18 @@ class _HomeViewState extends State<HomeView> {
             (_) => EpisodeDetailsPage(
               episode: episode,
               episodeRepository: widget.episodeRepository,
+            ),
+      ),
+    );
+  }
+
+  void _openLocation(LocationSummary location) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => LocationDetailsPage(
+              location: location,
+              locationRepository: widget.locationRepository,
             ),
       ),
     );

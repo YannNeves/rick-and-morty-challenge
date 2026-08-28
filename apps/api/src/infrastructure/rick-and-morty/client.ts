@@ -55,7 +55,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
   async listEpisodes(
     filters: EpisodeListFilters
   ): Promise<EpisodePage> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     if (filters.name) {
       searchParams.set("name", filters.name);
@@ -66,7 +67,7 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyEpisode>>(
-      `/episode?${searchParams.toString()}`
+      `/episode${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`
     );
 
     return {
@@ -82,7 +83,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
   async listCharacters(
     filters: CharacterListFilters
   ): Promise<CharacterListResult> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     for (const key of ["name", "status", "species", "type", "gender"] as const) {
       const value = filters[key];
@@ -92,7 +94,7 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyCharacter>>(
-      `/character?${searchParams.toString()}`
+      `/character${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`
     );
 
     return {
@@ -106,7 +108,8 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
   }
 
   async listLocations(filters: LocationListFilters): Promise<LocationPage> {
-    const searchParams = new URLSearchParams({ page: String(filters.page) });
+    const searchParams = new URLSearchParams();
+    if (filters.page > 1) searchParams.set("page", String(filters.page));
 
     for (const key of ["name", "type", "dimension"] as const) {
       const value = filters[key];
@@ -116,7 +119,7 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     }
 
     const page = await this.getJson<RickAndMortyPage<RickAndMortyLocation>>(
-      `/location?${searchParams.toString()}`
+      `/location${searchParams.size > 0 ? `?${searchParams.toString()}` : ""}`
     );
 
     return {

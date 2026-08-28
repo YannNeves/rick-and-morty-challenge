@@ -64,6 +64,11 @@ void main() {
 
 class _CharacterRepositoryStub implements CharacterRepository {
   @override
+  Future<List<CharacterSummary>> getAllCharacters() async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<CharacterListPage> getCharacters({int page = 1}) async {
     final characters = List.generate(12, (index) {
       final letter = String.fromCharCode('L'.codeUnitAt(0) - index);
@@ -93,6 +98,11 @@ class _CharacterRepositoryStub implements CharacterRepository {
 }
 
 class _EpisodeRepositoryStub implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getAllEpisodes() async {
+    throw UnimplementedError();
+  }
+
   @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async {
     const codes = [
@@ -140,6 +150,16 @@ class _EpisodeRepositoryStub implements EpisodeRepository {
 }
 
 class _LocationRepositoryStub implements LocationRepository {
+  @override
+  Future<List<LocationSummary>> getAllLocations() async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<LocationDetails> getLocationDetails(int id) async {
+    throw UnimplementedError();
+  }
+
   @override
   Future<LocationListPage> getLocations({int page = 1}) async {
     final locations = List.generate(12, (index) {

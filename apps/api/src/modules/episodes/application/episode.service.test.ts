@@ -28,6 +28,13 @@ test("listEpisodes removes internal character ids from the public contract", asy
   assert.equal("characterIds" in (result.episodes[0] ?? {}), false);
 });
 
+test("listAllEpisodes returns the complete public collection", async () => {
+  const gateway = new FakeGateway();
+  const result = await new EpisodeService(gateway, gateway).listAllEpisodes();
+  assert.equal(result.length, 1);
+  assert.equal("characterIds" in (result[0] ?? {}), false);
+});
+
 test("getEpisodeDetails fetches characters in batch and sorts them by name", async () => {
   const gateway = new FakeGateway();
   const result = await new EpisodeService(gateway, gateway).getEpisodeDetails(28);

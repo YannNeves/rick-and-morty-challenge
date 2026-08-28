@@ -49,6 +49,13 @@ test("listLocations delegates filters and hides internal resident ids", async ()
   assert.equal("residentIds" in (result.locations[0] ?? {}), false);
 });
 
+test("listAllLocations aggregates every page and hides resident ids", async () => {
+  const gateway = new FakeGateway();
+  const result = await new LocationService(gateway, gateway).listAllLocations();
+  assert.equal(result.length, 7);
+  assert.equal("residentIds" in (result[0] ?? {}), false);
+});
+
 test("getLocationDetails expands and sorts residents by name", async () => {
   const gateway = new FakeGateway();
   const result = await new LocationService(gateway, gateway).getLocationDetails(3);

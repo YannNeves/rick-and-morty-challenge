@@ -37,6 +37,10 @@ export class CharactersController {
     res.json(await this.characterService.getCharacterDetails(id));
   };
 
+  all = async (_req: Request, res: Response): Promise<void> => {
+    res.json({ characters: await this.characterService.listAllCharacters() });
+  };
+
   batch = async (req: Request, res: Response): Promise<void> => {
     const ids = parseIdList(req.query.ids, "ids", CHARACTER_BATCH_LIMIT);
     res.json({

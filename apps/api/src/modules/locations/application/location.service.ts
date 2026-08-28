@@ -23,6 +23,19 @@ export class LocationService {
     };
   }
 
+  async listAllLocations(): Promise<LocationSummary[]> {
+    const firstPage = await this.locationsGateway.listLocations({ page: 1 });
+    const remainingPages = await Promise.all(
+      Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+        this.locationsGateway.listLocations({ page: index + 2 })
+      )
+    );
+    return [firstPage, ...remainingPages]
+      .flatMap((page) => page.locations)
+      .map(({ residentIds: _residentIds, ...location }) => location)
+      .toSorted((left, right) => left.name.localeCompare(right.name, "en", { sensitivity: "base" }));
+  }
+
   async getLocationDetails(id: number): Promise<LocationDetails> {
     if (!Number.isInteger(id) || id <= 0) {
       throw badRequest("Location id must be a positive integer", { id });

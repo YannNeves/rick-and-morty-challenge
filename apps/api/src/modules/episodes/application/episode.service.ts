@@ -34,6 +34,19 @@ export class EpisodeService {
     };
   }
 
+  async listAllEpisodes(): Promise<EpisodeSummary[]> {
+    const firstPage = await this.episodesGateway.listEpisodes({ page: 1 });
+    const remainingPages = await Promise.all(
+      Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+        this.episodesGateway.listEpisodes({ page: index + 2 })
+      )
+    );
+    return [firstPage, ...remainingPages]
+      .flatMap((page) => page.episodes)
+      .map(({ characterIds: _characterIds, ...episode }) => episode)
+      .toSorted((left, right) => left.code.localeCompare(right.code));
+  }
+
   async getEpisodeDetails(
     id: number,
     options: EpisodeDetailsOptions = {}

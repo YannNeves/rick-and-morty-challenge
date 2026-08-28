@@ -133,6 +133,24 @@ paths:
           description: Invalid location id
         "404":
           description: Location not found
+  /locations/all:
+    get:
+      summary: Get all locations ordered by name
+      responses:
+        "200":
+          description: Complete location collection
+  /characters/all:
+    get:
+      summary: Get all characters ordered by name
+      responses:
+        "200":
+          description: Complete character collection
+  /episodes/all:
+    get:
+      summary: Get all episodes ordered by season and episode
+      responses:
+        "200":
+          description: Complete episode collection
   /episodes:
     get:
       summary: List episodes

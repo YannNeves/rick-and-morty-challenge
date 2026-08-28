@@ -15,6 +15,18 @@ export class CharacterService {
     return this.gateway.listCharacters(filters);
   }
 
+  async listAllCharacters(): Promise<CharacterSummary[]> {
+    const firstPage = await this.gateway.listCharacters({ page: 1 });
+    const remainingPages = await Promise.all(
+      Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
+        this.gateway.listCharacters({ page: index + 2 })
+      )
+    );
+    return [firstPage, ...remainingPages]
+      .flatMap((page) => page.characters)
+      .toSorted((left, right) => left.name.localeCompare(right.name, "en", { sensitivity: "base" }));
+  }
+
   async getCharacterDetails(id: number): Promise<CharacterDetails> {
     if (!Number.isInteger(id) || id <= 0) {
       throw badRequest("Character id must be a positive integer", { id });
