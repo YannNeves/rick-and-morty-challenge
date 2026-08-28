@@ -213,7 +213,7 @@ class _HeroCopy extends StatelessWidget {
           const SizedBox(height: 28),
           Text(
             isDark
-                ? 'Aí sim, Por#@%&*'
+                ? 'Wubba Lubba Dub Dub! Explore o multiverso.'
                 : 'Wubba Lubba Dub Dub! Cuidado com os olhos.',
             style: textTheme.titleMedium?.copyWith(color: AppColors.blue),
           ),

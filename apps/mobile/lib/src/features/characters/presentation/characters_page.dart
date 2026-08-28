@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -37,6 +39,7 @@ class CharactersPage extends StatefulWidget {
 class _CharactersPageState extends State<CharactersPage> {
   late final CharactersController _controller;
   final ScrollController _scrollController = ScrollController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -54,9 +57,17 @@ class _CharactersPageState extends State<CharactersPage> {
   @override
   void didUpdateWidget(covariant CharactersPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.searchQuery != widget.searchQuery ||
-        !mapEquals(oldWidget.filters, widget.filters)) {
+    final filtersChanged = !mapEquals(oldWidget.filters, widget.filters);
+    if (filtersChanged) {
+      _searchDebounce?.cancel();
       _controller.load(name: widget.searchQuery, filters: widget.filters);
+    } else if (oldWidget.searchQuery != widget.searchQuery) {
+      _searchDebounce?.cancel();
+      _searchDebounce = Timer(
+        const Duration(milliseconds: 350),
+        () =>
+            _controller.load(name: widget.searchQuery, filters: widget.filters),
+      );
     }
   }
 
@@ -65,6 +76,7 @@ class _CharactersPageState extends State<CharactersPage> {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
+    _searchDebounce?.cancel();
     _controller.dispose();
     super.dispose();
   }

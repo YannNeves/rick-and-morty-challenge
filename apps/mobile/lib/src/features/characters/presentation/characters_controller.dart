@@ -20,6 +20,7 @@ class CharactersController extends ChangeNotifier {
   bool _isLoadingMore = false;
   String _name = '';
   Map<String, String> _filters = const {};
+  int _generation = 0;
 
   bool get isLoadingMore => _isLoadingMore;
   bool get hasNextPage => _hasNextPage;
@@ -28,16 +29,18 @@ class CharactersController extends ChangeNotifier {
     String name = '',
     Map<String, String> filters = const {},
   }) async {
+    final generation = ++_generation;
     _name = name;
     _filters = Map.unmodifiable(filters);
     _page = 0;
     _hasNextPage = true;
+    _isLoadingMore = false;
     characters = const [];
     status = CharactersLoadStatus.loading;
     errorMessage = null;
     loadMoreErrorMessage = null;
     notifyListeners();
-    await _loadNextPage();
+    await _loadNextPage(generation);
   }
 
   Future<void> loadMore() async {
@@ -49,7 +52,9 @@ class CharactersController extends ChangeNotifier {
     }
     _isLoadingMore = true;
     notifyListeners();
-    await _loadNextPage();
+    final generation = _generation;
+    await _loadNextPage(generation);
+    if (generation != _generation) return;
     _isLoadingMore = false;
     notifyListeners();
   }
@@ -61,15 +66,16 @@ class CharactersController extends ChangeNotifier {
     await loadMore();
   }
 
-  Future<void> _loadNextPage() async {
+  Future<void> _loadNextPage(int generation) async {
     try {
       final nextPage = _page + 1;
       final result = await _characterRepository.getCharacters(
         page: nextPage,
         name: _name,
         status: _filters['status'],
-        gender: _filters['gender'],
+        species: _filters['species'],
       );
+      if (generation != _generation) return;
       _page = result.page;
       _hasNextPage = result.hasNextPage;
       final updated = <CharacterSummary>[...characters, ...result.characters];
@@ -79,6 +85,7 @@ class CharactersController extends ChangeNotifier {
       loadMoreErrorMessage = null;
       notifyListeners();
     } catch (_) {
+      if (generation != _generation) return;
       if (characters.isEmpty) {
         status = CharactersLoadStatus.failure;
         errorMessage = 'Não foi possível carregar os personagens.';
@@ -96,11 +103,15 @@ class CharactersController extends ChangeNotifier {
     final direction = _filters['order'] == 'desc' ? -1 : 1;
     items.sort((left, right) {
       final result = switch (sortBy) {
-        'status' => left.status.compareTo(right.status),
-        'species' => left.species.compareTo(right.species),
-        _ => left.name.compareTo(right.name),
+        'status' => left.status.toLowerCase().compareTo(
+          right.status.toLowerCase(),
+        ),
+        'species' => left.species.toLowerCase().compareTo(
+          right.species.toLowerCase(),
+        ),
+        _ => left.name.toLowerCase().compareTo(right.name.toLowerCase()),
       };
-      return result * direction;
+      return (result == 0 ? left.id.compareTo(right.id) : result) * direction;
     });
   }
 }

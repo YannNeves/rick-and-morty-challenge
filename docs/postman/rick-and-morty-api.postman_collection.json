@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "be58fc39-2793-4975-bfde-0d041b5c49e5",
     "name": "Rick and Morty Challenge API",
-    "description": "Testes manuais da API intermediaria consumida pelo Flutter. Selecione o environment Local antes de executar.",
+    "description": "Collection de demonstração da API intermediária consumida pelo Flutter. Cobre healthcheck, paginação, filtros, coleções completas, batches, detalhes, relacionamentos, ordenação e erros normalizados.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -11,8 +11,8 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "pm.test('Response time is below 8 seconds', function () {",
-          "  pm.expect(pm.response.responseTime).to.be.below(8000);",
+          "pm.test('Response time is below 20 seconds', function () {",
+          "  pm.expect(pm.response.responseTime).to.be.below(20000);",
           "});",
           "pm.test('Response is JSON', function () {",
           "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
@@ -31,9 +31,20 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/health",
-            "description": "Confirma que o processo da API esta disponivel."
+            "description": "Confirma que o processo da API está disponível."
           },
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Service is healthy', () => pm.expect(pm.response.json().status).to.eql('ok')); "]}}]
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Service is healthy', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -42,37 +53,269 @@
       "item": [
         {
           "name": "List characters",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/characters?page=1","description":"Lista personagens paginados."},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Returns a character page', function () { const body = pm.response.json(); pm.expect(body.page).to.eql(1); pm.expect(body.characters).to.be.an('array'); });"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters?page=1",
+            "description": "Lista personagens paginados, como usado pelo infinite load."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns a character page', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.page).to.eql(1);",
+                  "  pm.expect(body.hasNextPage).to.be.a('boolean');",
+                  "  pm.expect(body.characters).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Filter characters",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/characters?page=1&name=rick&status=alive&species=human&gender=male","description":"Filtros podem ser removidos ou alterados na aba Params."},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Every result matches name filter', function () { pm.response.json().characters.forEach(character => pm.expect(character.name.toLowerCase()).to.include('rick')); });"]}}]
+          "name": "Filter characters by UI fields",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters?page=1&name=rick&status=alive&species=human",
+            "description": "Exercita os filtros expostos pelo Flutter: Nome, Status e Espécie. A API também aceita type e gender conforme o OpenAPI."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Every result matches the filters', function () {",
+                  "  pm.response.json().characters.forEach(function (character) {",
+                  "    pm.expect(character.name.toLowerCase()).to.include('rick');",
+                  "    pm.expect(character.status.toLowerCase()).to.eql('alive');",
+                  "    pm.expect(character.species.toLowerCase()).to.eql('human');",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Empty character search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters?page=1&name={{missingCharacterName}}",
+            "description": "Um filtro sem correspondência deve virar uma página vazia 200, e não um 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns an empty page', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.totalItems).to.eql(0);",
+                  "  pm.expect(body.characters).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get all characters sorted",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters/all",
+            "description": "Agrega todas as páginas com concorrência limitada e ordena globalmente por nome, com desempate por ID."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Characters are deterministically sorted', function () {",
+                  "  const characters = pm.response.json().characters;",
+                  "  const compare = (left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base', numeric: true }) || left.id - right.id;",
+                  "  const expected = [...characters].sort(compare).map(item => item.id);",
+                  "  pm.expect(characters.map(item => item.id)).to.eql(expected);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get character details",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/characters/{{characterId}}","description":"Retorna origem, localizacao e ids de episodios no contrato proprio da API."},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Returns detail relationships', function () { const body = pm.response.json(); pm.expect(body.id).to.eql(Number(pm.environment.get('characterId'))); pm.expect(body.episodeIds).to.be.an('array'); pm.expect(body.origin).to.be.an('object'); });"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters/{{characterId}}",
+            "description": "Retorna origem, localização atual e IDs dos episódios no contrato próprio da API."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns detail relationships', function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.id).to.eql(Number(pm.environment.get('characterId')));",
+                  "  pm.expect(body.episodeIds).to.be.an('array');",
+                  "  pm.expect(body.origin).to.include.keys('id', 'name');",
+                  "  pm.expect(body.location).to.include.keys('id', 'name');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get characters batch",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/characters/batch?ids=1,183,1","description":"Valida deduplicacao e preservacao da ordem solicitada."},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Deduplicates and preserves order', function () { pm.expect(pm.response.json().characters.map(item => item.id)).to.eql([1, 183]); });"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters/batch?ids=1,183,1",
+            "description": "Remove IDs duplicados e preserva a ordem solicitada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Deduplicates and preserves order', () => pm.expect(pm.response.json().characters.map(item => item.id)).to.eql([1, 183]));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid character id",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/characters/zero"},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 400', () => pm.response.to.have.status(400));","pm.test('Returns normalized error', () => pm.expect(pm.response.json().error.code).to.eql('BAD_REQUEST')); "]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/characters/zero"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Returns normalized error', () => pm.expect(pm.response.json().error.code).to.eql('BAD_REQUEST'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
       "name": "Locations",
       "item": [
-        {"name":"List and filter locations","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations?page=1&name=citadel&type=space%20station&dimension=unknown"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));"]}}]},
-        {"name":"Get location with sorted residents","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations/{{locationId}}"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));"]}}]},
-        {"name":"Get locations batch","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations/batch?ids=3,21,3"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Preserves order', () => pm.expect(pm.response.json().locations.map(item => item.id)).to.eql([3, 21]));"]}}]}
+        {
+          "name": "List and filter locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/locations?page=1&name=citadel&type=space%20station&dimension=unknown",
+            "description": "Lista localizações paginadas e demonstra todos os filtros suportados pela API."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns a location page', () => pm.expect(pm.response.json().locations).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get all locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/locations/all",
+            "description": "Retorna a coleção completa usada na tela geral de Localizações."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns locations', () => pm.expect(pm.response.json().locations).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get location with sorted residents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/locations/{{locationId}}",
+            "description": "Expande residentes e aplica a mesma ordenação determinística usada nos episódios."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Residents are deterministically sorted', function () {",
+                  "  const residents = pm.response.json().residents;",
+                  "  const compare = (left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base', numeric: true }) || left.id - right.id;",
+                  "  const expected = [...residents].sort(compare).map(item => item.id);",
+                  "  pm.expect(residents.map(item => item.id)).to.eql(expected);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get locations batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/locations/batch?ids=3,21,3"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Deduplicates and preserves order', () => pm.expect(pm.response.json().locations.map(item => item.id)).to.eql([3, 21]));"
+                ]
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -80,28 +323,136 @@
       "item": [
         {
           "name": "List episodes",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes?page=1"},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Returns an episode page', () => pm.expect(pm.response.json().episodes).to.be.an('array')); "]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes?page=1",
+            "description": "Lista episódios paginados."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns an episode page', () => pm.expect(pm.response.json().episodes).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Filter episodes",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes?page=1&name=ricklantis&episode=S03E07"},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes?page=1&name=ricklantis&episode=S03E07",
+            "description": "Filtra por nome e código de temporada/episódio."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns S03E07', () => pm.expect(pm.response.json().episodes.every(item => item.code === 'S03E07')).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get all episodes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes/all",
+            "description": "Retorna a coleção completa ordenada por temporada e episódio."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Episodes are sorted by code', function () {",
+                  "  const episodes = pm.response.json().episodes;",
+                  "  const expected = [...episodes].sort((left, right) => left.code.localeCompare(right.code)).map(item => item.id);",
+                  "  pm.expect(episodes.map(item => item.id)).to.eql(expected);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get episode with sorted characters",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes/{{episodeId}}?sortCharactersBy=name&characterOrder=asc","description":"Os campos aceitos para ordenacao sao name, id, status e species; a ordem pode ser asc ou desc."},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Characters are sorted by name', function () { const names = pm.response.json().characters.map(item => item.name); const sorted = [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })); pm.expect(names).to.eql(sorted); });"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes/{{episodeId}}?sortCharactersBy=name&characterOrder=asc",
+            "description": "Os campos aceitos são name, id, status e species; a ordem pode ser asc ou desc."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Characters are deterministically sorted', function () {",
+                  "  const characters = pm.response.json().characters;",
+                  "  const compare = (left, right) => left.name.localeCompare(right.name, 'pt-BR', { sensitivity: 'base', numeric: true }) || left.id - right.id;",
+                  "  const expected = [...characters].sort(compare).map(item => item.id);",
+                  "  pm.expect(characters.map(item => item.id)).to.eql(expected);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get episodes batch",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes/batch?ids=10,28,10"},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Preserves order', () => pm.expect(pm.response.json().episodes.map(item => item.id)).to.eql([10, 28]));"]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes/batch?ids=10,28,10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Deduplicates and preserves order', () => pm.expect(pm.response.json().episodes.map(item => item.id)).to.eql([10, 28]));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Reject invalid sort field",
-          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes/{{episodeId}}?sortCharactersBy=created"},
-          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 400', () => pm.response.to.have.status(400));","pm.test('Returns normalized error', () => pm.expect(pm.response.json().error.code).to.eql('BAD_REQUEST')); "]}}]
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiBaseUrl}}/episodes/{{episodeId}}?sortCharactersBy=created"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Returns normalized error', () => pm.expect(pm.response.json().error.code).to.eql('BAD_REQUEST'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

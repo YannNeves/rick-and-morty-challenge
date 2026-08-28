@@ -29,6 +29,7 @@ const testEnv: AppEnv = {
   rickAndMortyApiUrl: "https://example.com",
   requestTimeoutMs: 100,
   cacheTtlMs: 100,
+  cacheMaxEntries: 20,
   allowedOrigins: ["*"]
 };
 

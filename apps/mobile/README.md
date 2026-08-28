@@ -21,7 +21,7 @@ npm run mobile:run:android
 npm run mobile:run:web
 ```
 
-Diretamente neste diretorio:
+Diretamente neste diretório:
 
 ```bash
 fvm flutter pub get
@@ -32,20 +32,24 @@ fvm flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v
 
 ```bash
 fvm flutter analyze
-fvm flutter test
-fvm flutter build web
-fvm flutter build apk --debug
-fvm flutter build ios --simulator --no-codesign
+fvm flutter test --coverage
+fvm dart run tool/check_coverage.dart coverage/lcov.info 65
+fvm flutter build web --release --dart-define=API_BASE_URL=https://api.example.invalid/api/v1
+fvm flutter build apk --release --dart-define=API_BASE_URL=https://api.example.invalid/api/v1
+fvm flutter build ios --simulator --no-codesign --dart-define=API_BASE_URL=https://api.example.invalid/api/v1
 ```
 
-## Configuracoes
+## Configurações
 
-- `API_BASE_URL`: base da API Node. Padrao Web/iOS: `http://localhost:3000/api/v1`; Android emulator: `http://10.0.2.2:3000/api/v1`.
+- `API_BASE_URL`: base da API Node. Padrão Web/iOS em desenvolvimento:
+  `http://localhost:3000/api/v1`; Android Emulator: `http://10.0.2.2:3000/api/v1`.
+- release exige uma URL HTTP(S) explícita e não local. O domínio `.invalid` acima
+  valida somente a compilação e deve ser substituído antes da distribuição.
 
 ## Arquitetura
 
 O aplicativo adota MVVM orientado por feature, com View/ViewModel na camada de UI,
 Repository/Service na camada de dados e use cases apenas quando a complexidade
 justificar. Consulte a
-[especificacao de arquitetura](../../docs/FLUTTER_ARCHITECTURE.md) antes de criar
-ou reorganizar uma feature.
+[arquitetura e as decisões técnicas](../../docs/ARCHITECTURE.md) antes de criar ou
+reorganizar uma feature.

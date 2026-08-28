@@ -1,35 +1,20 @@
 enum AppDestination {
   home(
     label: 'Home',
-    routeLabel: 'Rota Home',
     iconAsset: 'assets/branding/home.png',
     isRasterIcon: true,
   ),
-  episodes(
-    label: 'Episódios',
-    routeLabel: 'Rota Episódios',
-    iconAsset: 'assets/branding/episode.svg',
-  ),
-  locations(
-    label: 'Localização',
-    routeLabel: 'Rota Localização',
-    iconAsset: 'assets/branding/planet.svg',
-  ),
-  characters(
-    label: 'Personagens',
-    routeLabel: 'Rota Personagens',
-    iconAsset: 'assets/branding/character.svg',
-  );
+  episodes(label: 'Episódios', iconAsset: 'assets/branding/episode.svg'),
+  locations(label: 'Localização', iconAsset: 'assets/branding/planet.svg'),
+  characters(label: 'Personagens', iconAsset: 'assets/branding/character.svg');
 
   const AppDestination({
     required this.label,
-    required this.routeLabel,
     required this.iconAsset,
     this.isRasterIcon = false,
   });
 
   final String label;
-  final String routeLabel;
   final String iconAsset;
   final bool isRasterIcon;
 

@@ -3,6 +3,4 @@ abstract interface class ApiClient {
     String path, {
     Map<String, String>? query,
   });
-
-  Future<void> postMap(String path, {required Map<String, dynamic> body});
 }

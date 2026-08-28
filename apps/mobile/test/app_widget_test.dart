@@ -148,7 +148,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Status'), findsWidgets);
-    expect(find.text('Gênero'), findsOneWidget);
+    expect(find.text('Espécie'), findsWidgets);
 
     await tester.tap(find.byTooltip('Limpar filtros'));
     await tester.pumpAndSettle();
@@ -157,6 +157,8 @@ void main() {
       find.byKey(const ValueKey('global-search-field')),
       'Rick',
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 351));
     await tester.pumpAndSettle();
 
     expect(find.text('Rick Sanchez'), findsOneWidget);
@@ -196,6 +198,8 @@ void main() {
       find.byKey(const ValueKey('global-search-field')),
       'Morty',
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 351));
     await tester.pumpAndSettle();
 
     expect(
@@ -247,18 +251,11 @@ class FakeCharacterRepository implements CharacterRepository {
   }
 
   @override
-  Future<List<CharacterSummary>> getAllCharacters() async {
-    return (await getCharacters()).characters;
-  }
-
-  @override
   Future<CharacterListPage> getCharacters({
     int page = 1,
     String? name,
     String? status,
     String? species,
-    String? type,
-    String? gender,
   }) async {
     final matchesName =
         name == null ||

@@ -61,3 +61,12 @@ test("sortCharacters orders by id desc when requested", () => {
     [3, 2, 1]
   );
 });
+
+test("sortCharacters uses id as a deterministic tie-breaker", () => {
+  const tied = [
+    { ...characters[0]!, id: 9, name: "Álpha" },
+    { ...characters[0]!, id: 2, name: "alpha" }
+  ];
+
+  assert.deepEqual(sortCharacters(tied).map((character) => character.id), [2, 9]);
+});

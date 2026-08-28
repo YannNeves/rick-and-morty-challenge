@@ -1,5 +1,12 @@
 name: CI
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -17,12 +24,15 @@ jobs:
           cache-dependency-path: apps/api/package-lock.json
       - run: npm ci --prefix apps/api
       - run: npm --prefix apps/api run lint
-      - run: npm --prefix apps/api test
+      - run: npm --prefix apps/api run openapi:lint
+      - run: npm --prefix apps/api run test:coverage
       - run: npm --prefix apps/api run build
       - run: docker build --file apps/api/Dockerfile --tag rick-and-morty-api:ci .
 
   mobile:
     runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL || 'https://api.example.invalid/api/v1' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -38,15 +48,35 @@ jobs:
         working-directory: apps/mobile
       - run: flutter analyze
         working-directory: apps/mobile
-      - run: flutter test
+      - run: dart format --output=none --set-exit-if-changed lib test tool
         working-directory: apps/mobile
-      - run: flutter build web
+      - run: flutter test --coverage
         working-directory: apps/mobile
-      - run: flutter build apk --debug
+      - run: dart run tool/check_coverage.dart coverage/lcov.info 65
         working-directory: apps/mobile
+      - run: flutter build web --release --dart-define=API_BASE_URL=$API_BASE_URL
+        working-directory: apps/mobile
+      - run: grep -q android.permission.INTERNET android/app/src/main/AndroidManifest.xml
+        working-directory: apps/mobile
+      - run: flutter build apk --release --dart-define=API_BASE_URL=$API_BASE_URL
+        working-directory: apps/mobile
+      - run: grep -q android.permission.INTERNET build/app/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml
+        working-directory: apps/mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web
+          path: apps/mobile/build/web
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-release
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
 
   mobile-ios:
     runs-on: macos-latest
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL || 'https://api.example.invalid/api/v1' }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -56,5 +86,5 @@ jobs:
           cache: true
       - run: flutter pub get
         working-directory: apps/mobile
-      - run: flutter build ios --simulator --no-codesign
+      - run: flutter build ios --simulator --no-codesign --dart-define=API_BASE_URL=$API_BASE_URL
         working-directory: apps/mobile

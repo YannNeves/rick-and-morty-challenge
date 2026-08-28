@@ -33,7 +33,8 @@ test("client retries a transient connection failure", async () => {
     baseUrl: "https://example.com/api",
     timeoutMs: 100,
     cacheTtlMs: 1_000,
-    fetchFn
+    fetchFn,
+    sleepFn: async () => undefined
   });
 
   assert.equal((await client.getEpisode(1)).name, "Pilot");
@@ -60,7 +61,8 @@ test("client retries timeout and exposes a normalized upstream error", async () 
     baseUrl: "https://example.com/api",
     timeoutMs: 5,
     cacheTtlMs: 1_000,
-    fetchFn
+    fetchFn,
+    sleepFn: async () => undefined
   });
 
   await assert.rejects(
@@ -70,7 +72,52 @@ test("client retries timeout and exposes a normalized upstream error", async () 
       error.code === "UPSTREAM_ERROR" &&
       error.message.includes("timed out")
   );
+  assert.equal(calls, 3);
+});
+
+test("client retries rate limits and respects Retry-After", async () => {
+  let calls = 0;
+  const delays: number[] = [];
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => {
+      calls += 1;
+      return calls === 1
+        ? new Response("rate limited", {
+            status: 429,
+            headers: { "retry-after": "2" }
+          })
+        : jsonResponse(episode);
+    },
+    sleepFn: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+    randomFn: () => 0
+  });
+
+  assert.equal((await client.getEpisode(1)).id, 1);
   assert.equal(calls, 2);
+  assert.deepEqual(delays, [2_000]);
+});
+
+test("client retries transient upstream statuses with exponential backoff", async () => {
+  const statuses = [503, 504, 200];
+  const delays: number[] = [];
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => jsonResponse(episode, statuses.shift()),
+    sleepFn: async (milliseconds) => {
+      delays.push(milliseconds);
+    },
+    randomFn: () => 0
+  });
+
+  assert.equal((await client.getEpisode(1)).name, "Pilot");
+  assert.deepEqual(delays, [250, 500]);
 });
 
 test("client caches successful responses", async () => {
@@ -104,6 +151,47 @@ test("client maps missing upstream resources to not found", async () => {
     client.getEpisode(999),
     (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND"
   );
+});
+
+test("client maps an empty filtered collection to an empty successful page", async () => {
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => jsonResponse({ error: "not found" }, 404)
+  });
+
+  const result = await client.listCharacters({ page: 1, name: "does-not-exist" });
+  assert.equal(result.totalItems, 0);
+  assert.equal(result.totalPages, 0);
+  assert.deepEqual(result.characters, []);
+});
+
+test("client deduplicates identical in-flight requests", async () => {
+  let calls = 0;
+  let resolveResponse: ((response: Response) => void) | undefined;
+  const response = new Promise<Response>((resolve) => {
+    resolveResponse = resolve;
+  });
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 1_000,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => {
+      calls += 1;
+      return response;
+    }
+  });
+
+  const first = client.getEpisode(1);
+  const second = client.getEpisode(1);
+  resolveResponse?.(jsonResponse(episode));
+
+  assert.deepEqual(await Promise.all([first, second]), [
+    await first,
+    await first
+  ]);
+  assert.equal(calls, 1);
 });
 
 test("client forwards character pagination and filters", async () => {

@@ -7,6 +7,10 @@ import {
   type CharacterSummary
 } from "../domain/character.models.js";
 import type { CharactersGateway } from "./characters.gateway.js";
+import { mapWithConcurrency } from "../../../shared/async/map-with-concurrency.js";
+import { compareCharactersByName } from "../domain/character-order.js";
+
+const PAGE_CONCURRENCY = 4;
 
 export class CharacterService {
   constructor(private readonly gateway: CharactersGateway) {}
@@ -17,14 +21,16 @@ export class CharacterService {
 
   async listAllCharacters(): Promise<CharacterSummary[]> {
     const firstPage = await this.gateway.listCharacters({ page: 1 });
-    const remainingPages = await Promise.all(
+    const remainingPages = await mapWithConcurrency(
       Array.from({ length: firstPage.totalPages - 1 }, (_, index) =>
-        this.gateway.listCharacters({ page: index + 2 })
-      )
+        index + 2
+      ),
+      PAGE_CONCURRENCY,
+      (page) => this.gateway.listCharacters({ page })
     );
     return [firstPage, ...remainingPages]
       .flatMap((page) => page.characters)
-      .toSorted((left, right) => left.name.localeCompare(right.name, "en", { sensitivity: "base" }));
+      .toSorted(compareCharactersByName);
   }
 
   async getCharacterDetails(id: number): Promise<CharacterDetails> {

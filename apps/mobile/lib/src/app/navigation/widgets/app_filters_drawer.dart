@@ -33,7 +33,7 @@ class _FiltersDrawer extends StatefulWidget {
 
 class _FiltersDrawerState extends State<_FiltersDrawer> {
   late String _status = widget.initialFilters['status'] ?? '';
-  late String _gender = widget.initialFilters['gender'] ?? '';
+  late String _species = widget.initialFilters['species'] ?? '';
   late String _sortBy =
       widget.initialFilters['sortBy'] ??
       (widget.destination == AppDestination.episodes ? 'episode' : 'name');
@@ -103,6 +103,19 @@ class _FiltersDrawerState extends State<_FiltersDrawer> {
                 onSelected: (value) => setState(() => _status = value),
               ),
               const SizedBox(height: 20),
+              _OptionGroup(
+                title: 'Espécie',
+                selected: _species,
+                options: const {
+                  '': 'Todos',
+                  'human': 'Humano',
+                  'alien': 'Alienígena',
+                  'humanoid': 'Humanoide',
+                  'robot': 'Robô',
+                },
+                onSelected: (value) => setState(() => _species = value),
+              ),
+              const SizedBox(height: 20),
             ],
             _OptionGroup(
               title: 'Ordenar por',
@@ -117,29 +130,14 @@ class _FiltersDrawerState extends State<_FiltersDrawer> {
               options: const {'asc': 'Crescente', 'desc': 'Decrescente'},
               onSelected: (value) => setState(() => _order = value),
             ),
-            const SizedBox(height: 20),
-            if (widget.destination == AppDestination.characters) ...[
-              _OptionGroup(
-                title: 'Gênero',
-                selected: _gender,
-                options: const {
-                  '': 'Todos',
-                  'female': 'Feminino',
-                  'male': 'Masculino',
-                  'genderless': 'Sem gênero',
-                  'unknown': 'Desconhecido',
-                },
-                onSelected: (value) => setState(() => _gender = value),
-              ),
-              const SizedBox(height: 24),
-            ],
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 onPressed:
                     () => Navigator.of(context).pop({
                       if (_status.isNotEmpty) 'status': _status,
-                      if (_gender.isNotEmpty) 'gender': _gender,
+                      if (_species.isNotEmpty) 'species': _species,
                       if (_sortBy != _defaultSort) 'sortBy': _sortBy,
                       if (_order != 'asc') 'order': _order,
                     }),

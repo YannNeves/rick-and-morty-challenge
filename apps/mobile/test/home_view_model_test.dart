@@ -54,17 +54,70 @@ void main() {
     expect(viewModel.characters.first.name, 'Character A');
     expect(viewModel.characters.last.name, 'Character L');
   });
+
+  test('loads and reorders the next home page for every section', () async {
+    final viewModel = HomeViewModel(
+      characterRepository: _CharacterRepositoryStub(paginated: true),
+      episodeRepository: _EpisodeRepositoryStub(paginated: true),
+      locationRepository: _LocationRepositoryStub(paginated: true),
+    );
+
+    await Future.wait([
+      viewModel.loadEpisodes(),
+      viewModel.loadLocations(),
+      viewModel.loadCharacters(),
+    ]);
+    await Future.wait([
+      viewModel.loadMoreEpisodes(),
+      viewModel.loadMoreLocations(),
+      viewModel.loadMoreCharacters(),
+    ]);
+
+    expect(viewModel.episodes.map((item) => item.code), ['S01E01', 'S02E01']);
+    expect(viewModel.locations.map((item) => item.name), [
+      'Location A',
+      'Location B',
+    ]);
+    expect(viewModel.characters.map((item) => item.name), [
+      'Character A',
+      'Character B',
+    ]);
+    expect(viewModel.hasMoreEpisodes, isFalse);
+    expect(viewModel.hasMoreLocations, isFalse);
+    expect(viewModel.hasMoreCharacters, isFalse);
+  });
+
+  test('preserves home characters when loading the next page fails', () async {
+    final viewModel = HomeViewModel(
+      characterRepository: _CharacterRepositoryStub(
+        paginated: true,
+        failSecondPage: true,
+      ),
+      episodeRepository: _EpisodeRepositoryStub(),
+      locationRepository: _LocationRepositoryStub(),
+    );
+
+    await viewModel.loadCharacters();
+    await viewModel.loadMoreCharacters();
+
+    expect(viewModel.characters.single.name, 'Character B');
+    expect(viewModel.charactersStatus, HomeLoadStatus.success);
+    expect(viewModel.moreCharactersError, isNotNull);
+  });
 }
 
 class _CharacterRepositoryStub implements CharacterRepository {
+  _CharacterRepositoryStub({
+    this.paginated = false,
+    this.failSecondPage = false,
+  });
+
+  final bool paginated;
+  final bool failSecondPage;
+
   @override
   Future<CharacterDetails> getCharacterDetails(int id) async =>
       throw UnimplementedError();
-
-  @override
-  Future<List<CharacterSummary>> getAllCharacters() async {
-    throw UnimplementedError();
-  }
 
   @override
   Future<CharacterListPage> getCharacters({
@@ -72,9 +125,33 @@ class _CharacterRepositoryStub implements CharacterRepository {
     String? name,
     String? status,
     String? species,
-    String? type,
-    String? gender,
   }) async {
+    if (failSecondPage && page == 2) throw Exception('rate limited');
+    if (paginated) {
+      final name = page == 1 ? 'Character B' : 'Character A';
+      return CharacterListPage(
+        page: page,
+        totalPages: 2,
+        totalItems: 2,
+        hasNextPage: page == 1,
+        hasPreviousPage: page > 1,
+        characters: [
+          CharacterSummary(
+            id: page,
+            name: name,
+            status: 'Alive',
+            species: 'Human',
+            type: '',
+            gender: 'Unknown',
+            image: '',
+            origin: 'Earth',
+            location: 'Earth',
+            episodeCount: 1,
+          ),
+        ],
+      );
+    }
+
     final characters = List.generate(12, (index) {
       final letter = String.fromCharCode('L'.codeUnitAt(0) - index);
       return CharacterSummary(
@@ -103,6 +180,10 @@ class _CharacterRepositoryStub implements CharacterRepository {
 }
 
 class _EpisodeRepositoryStub implements EpisodeRepository {
+  _EpisodeRepositoryStub({this.paginated = false});
+
+  final bool paginated;
+
   @override
   Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async =>
       throw UnimplementedError();
@@ -114,6 +195,26 @@ class _EpisodeRepositoryStub implements EpisodeRepository {
 
   @override
   Future<EpisodeListPage> getEpisodes({int page = 1}) async {
+    if (paginated) {
+      final code = page == 1 ? 'S02E01' : 'S01E01';
+      return EpisodeListPage(
+        page: page,
+        totalPages: 2,
+        totalItems: 2,
+        hasNextPage: page == 1,
+        hasPreviousPage: page > 1,
+        episodes: [
+          EpisodeSummary(
+            id: page,
+            name: 'Episode $code',
+            airDate: 'Date',
+            code: code,
+            characterCount: 1,
+          ),
+        ],
+      );
+    }
+
     const codes = [
       'S02E06',
       'S01E03',
@@ -160,6 +261,10 @@ class _EpisodeRepositoryStub implements EpisodeRepository {
 }
 
 class _LocationRepositoryStub implements LocationRepository {
+  _LocationRepositoryStub({this.paginated = false});
+
+  final bool paginated;
+
   @override
   Future<List<LocationSummary>> getLocationsBatch(List<int> ids) async =>
       throw UnimplementedError();
@@ -176,6 +281,26 @@ class _LocationRepositoryStub implements LocationRepository {
 
   @override
   Future<LocationListPage> getLocations({int page = 1}) async {
+    if (paginated) {
+      final name = page == 1 ? 'Location B' : 'Location A';
+      return LocationListPage(
+        page: page,
+        totalPages: 2,
+        totalItems: 2,
+        hasNextPage: page == 1,
+        hasPreviousPage: page > 1,
+        locations: [
+          LocationSummary(
+            id: page,
+            name: name,
+            type: 'Planet',
+            dimension: 'Dimension',
+            residentCount: 1,
+          ),
+        ],
+      );
+    }
+
     final locations = List.generate(12, (index) {
       final letter = String.fromCharCode('L'.codeUnitAt(0) - index);
       return LocationSummary(
