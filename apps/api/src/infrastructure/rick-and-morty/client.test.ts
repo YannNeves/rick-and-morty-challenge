@@ -138,6 +138,34 @@ test("client forwards character pagination and filters", async () => {
   assert.equal(url.searchParams.get("gender"), "male");
 });
 
+test("client forwards location pagination and filters and caches by URL", async () => {
+  const requestedUrls: string[] = [];
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async (input) => {
+      requestedUrls.push(input.toString());
+      return jsonResponse({
+        info: { count: 1, pages: 1, next: null, prev: null },
+        results: [{ id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residents: [], url: "", created: "" }]
+      });
+    }
+  });
+
+  const filters = { page: 2, name: "citadel", type: "station", dimension: "unknown" };
+  await client.listLocations(filters);
+  await client.listLocations(filters);
+
+  const url = new URL(requestedUrls[0]!);
+  assert.equal(url.pathname, "/api/location");
+  assert.equal(url.searchParams.get("page"), "2");
+  assert.equal(url.searchParams.get("name"), "citadel");
+  assert.equal(url.searchParams.get("type"), "station");
+  assert.equal(url.searchParams.get("dimension"), "unknown");
+  assert.equal(requestedUrls.length, 1);
+});
+
 test("client gets a single character by id", async () => {
   let requestedUrl = "";
   const client = new RickAndMortyHttpClient({

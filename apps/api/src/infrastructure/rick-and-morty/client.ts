@@ -3,6 +3,7 @@ import { InMemoryCache } from "../cache/in-memory-cache.js";
 import type {
   RickAndMortyCharacter,
   RickAndMortyEpisode,
+  RickAndMortyLocation,
   RickAndMortyPage
 } from "./types.js";
 import type { CharactersGateway } from "../../modules/characters/application/characters.gateway.js";
@@ -20,6 +21,9 @@ import type {
 } from "../../modules/episodes/domain/episode.models.js";
 import { toCharacterDetails, toCharacterSummary } from "./character.mapper.js";
 import { toEpisode } from "./episode.mapper.js";
+import type { LocationsGateway } from "../../modules/locations/application/locations.gateway.js";
+import type { LocationListFilters, LocationPage } from "../../modules/locations/domain/location.models.js";
+import { toLocation } from "./location.mapper.js";
 import { resolveApiUrl } from "./url-utils.js";
 
 type ClientConfig = {
@@ -32,10 +36,13 @@ type ClientConfig = {
 type CacheValue =
   | RickAndMortyEpisode
   | RickAndMortyCharacter[]
+  | RickAndMortyLocation
+  | RickAndMortyLocation[]
   | RickAndMortyPage<RickAndMortyCharacter>
-  | RickAndMortyPage<RickAndMortyEpisode>;
+  | RickAndMortyPage<RickAndMortyEpisode>
+  | RickAndMortyPage<RickAndMortyLocation>;
 
-export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGateway {
+export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGateway, LocationsGateway {
   private readonly cache: InMemoryCache<CacheValue>;
   private readonly fetchFn: typeof fetch;
 
@@ -94,6 +101,30 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
       hasNextPage: page.info.next !== null,
       hasPreviousPage: page.info.prev !== null,
       characters: page.results.map(toCharacterSummary)
+    };
+  }
+
+  async listLocations(filters: LocationListFilters): Promise<LocationPage> {
+    const searchParams = new URLSearchParams({ page: String(filters.page) });
+
+    for (const key of ["name", "type", "dimension"] as const) {
+      const value = filters[key];
+      if (value) {
+        searchParams.set(key, value);
+      }
+    }
+
+    const page = await this.getJson<RickAndMortyPage<RickAndMortyLocation>>(
+      `/location?${searchParams.toString()}`
+    );
+
+    return {
+      page: filters.page,
+      totalPages: page.info.pages,
+      totalItems: page.info.count,
+      hasNextPage: page.info.next !== null,
+      hasPreviousPage: page.info.prev !== null,
+      locations: page.results.map(toLocation)
     };
   }
 

@@ -40,6 +40,21 @@ inteiros positivos e remove duplicidades preservando a ordem solicitada.
 curl "http://localhost:3000/api/v1/characters/batch?ids=1,183"
 ```
 
+## `GET /locations`
+
+Lista localizacoes paginadas com contrato proprio e contagem de residentes.
+
+Query params:
+
+- `page`: numero positivo, padrao `1`.
+- `name`: nome parcial.
+- `type`: tipo da localizacao.
+- `dimension`: dimensao da localizacao.
+
+```bash
+curl "http://localhost:3000/api/v1/locations?page=1&name=citadel"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.

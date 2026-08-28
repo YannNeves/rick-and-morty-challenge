@@ -74,6 +74,33 @@ paths:
           description: Invalid character id
         "404":
           description: Character not found
+  /locations:
+    get:
+      summary: List and filter locations
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: dimension
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Location page
+        "400":
+          description: Invalid pagination
   /episodes:
     get:
       summary: List episodes
