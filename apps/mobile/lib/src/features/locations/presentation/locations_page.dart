@@ -18,6 +18,7 @@ class LocationsPage extends StatefulWidget {
     required this.episodeRepository,
     required this.searchQuery,
     required this.filters,
+    this.onGoHome,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class LocationsPage extends StatefulWidget {
   final EpisodeRepository episodeRepository;
   final String searchQuery;
   final Map<String, String> filters;
+  final VoidCallback? onGoHome;
 
   @override
   State<LocationsPage> createState() => _LocationsPageState();
@@ -112,6 +114,58 @@ class _LocationsPageState extends State<LocationsPage> {
           return descending ? -result : result;
         });
 
+        if (MediaQuery.sizeOf(context).width >= 900) {
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding = width > 1288 ? (width - 1240) / 2 : 24.0;
+          return RefreshIndicator(
+            onRefresh: _controller.load,
+            child: CustomScrollView(
+              key: const ValueKey('locations-page-grid'),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1240),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                        child: _LocationsHeader(
+                          count: filteredLocations.length,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (filteredLocations.isEmpty)
+                  const SliverToBoxAdapter(child: _NoSearchResults())
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
+                    sliver: SliverGrid.builder(
+                      itemCount: filteredLocations.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
+                            mainAxisExtent: 240,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                      itemBuilder: (context, index) {
+                        final location = filteredLocations[index];
+                        return _DesktopLocationCard(
+                          location: location,
+                          onTap: () => _openLocation(location),
+                        );
+                      },
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              ],
+            ),
+          );
+        }
+
         return RefreshIndicator(
           onRefresh: _controller.load,
           child: ListView.separated(
@@ -150,8 +204,78 @@ class _LocationsPageState extends State<LocationsPage> {
               locationRepository: widget.locationRepository,
               characterRepository: widget.characterRepository,
               episodeRepository: widget.episodeRepository,
+              onGoHome: widget.onGoHome,
             ),
       ),
+    );
+  }
+}
+
+class _DesktopLocationCard extends StatelessWidget {
+  const _DesktopLocationCard({required this.location, required this.onTap});
+
+  final LocationSummary location;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = isDark ? AppColors.white : AppColors.darkGray;
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        Positioned(
+          top: 30,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 42, 14, 16),
+                child: Column(
+                  children: [
+                    Text(
+                      displayValue(location.type),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      location.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.blue),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      onPressed: onTap,
+                      icon: const Icon(Icons.info_outline, size: 18),
+                      label: const Text('Saiba mais'),
+                      style: FilledButton.styleFrom(
+                        fixedSize: const Size(115, 32),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        textStyle: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        SvgPicture.asset(
+          'assets/branding/planet.svg',
+          width: 60,
+          height: 60,
+          colorFilter: ColorFilter.mode(foreground, BlendMode.srcIn),
+        ),
+      ],
     );
   }
 }

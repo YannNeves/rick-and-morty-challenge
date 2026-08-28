@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_colors.dart';
+
 import '../../characters/data/character_repository.dart';
 import '../../locations/data/location_repository.dart';
 import '../data/episode_repository.dart';
@@ -16,6 +18,7 @@ class EpisodesPage extends StatefulWidget {
     required this.locationRepository,
     required this.searchQuery,
     required this.filters,
+    this.onGoHome,
     super.key,
   });
 
@@ -24,6 +27,7 @@ class EpisodesPage extends StatefulWidget {
   final LocationRepository locationRepository;
   final String searchQuery;
   final Map<String, String> filters;
+  final VoidCallback? onGoHome;
 
   @override
   State<EpisodesPage> createState() => _EpisodesPageState();
@@ -103,6 +107,56 @@ class _EpisodesPageState extends State<EpisodesPage> {
           return descending ? -result : result;
         });
 
+        if (MediaQuery.sizeOf(context).width >= 900) {
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding = width > 1288 ? (width - 1240) / 2 : 24.0;
+          return RefreshIndicator(
+            onRefresh: _controller.loadAll,
+            child: CustomScrollView(
+              key: const ValueKey('episodes-page-grid'),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1240),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                        child: _EpisodesHeader(count: filteredEpisodes.length),
+                      ),
+                    ),
+                  ),
+                ),
+                if (filteredEpisodes.isEmpty)
+                  const SliverToBoxAdapter(child: _NoSearchResults())
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                    ),
+                    sliver: SliverGrid.builder(
+                      itemCount: filteredEpisodes.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 400,
+                            mainAxisExtent: 112,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                      itemBuilder: (context, index) {
+                        final episode = filteredEpisodes[index];
+                        return _EpisodeTile(
+                          episode: episode,
+                          onTap: () => _openEpisode(episode),
+                        );
+                      },
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              ],
+            ),
+          );
+        }
+
         return RefreshIndicator(
           onRefresh: _controller.loadAll,
           child: ListView.separated(
@@ -138,6 +192,7 @@ class _EpisodesPageState extends State<EpisodesPage> {
               episodeRepository: widget.episodeRepository,
               characterRepository: widget.characterRepository,
               locationRepository: widget.locationRepository,
+              onGoHome: widget.onGoHome,
             ),
       ),
     );
@@ -179,12 +234,13 @@ class _EpisodeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(24),
+      color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),

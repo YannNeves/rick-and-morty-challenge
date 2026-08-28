@@ -12,6 +12,11 @@ class EpisodesSection extends StatelessWidget {
     required this.onRetry,
     required this.onShowAll,
     required this.onEpisodeSelected,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onLoadMore,
+    required this.onRetryLoadMore,
+    this.loadMoreError,
     this.errorMessage,
     super.key,
   });
@@ -22,6 +27,11 @@ class EpisodesSection extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onShowAll;
   final ValueChanged<EpisodeSummary> onEpisodeSelected;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
+  final VoidCallback onRetryLoadMore;
+  final String? loadMoreError;
 
   @override
   Widget build(BuildContext context) {
@@ -46,27 +56,67 @@ class EpisodesSection extends StatelessWidget {
             actionLabel: 'Tentar novamente',
             onAction: onRetry,
           ),
-          HomeLoadStatus.success => SizedBox(
-            height: 116,
-            child: ListView.separated(
-              key: const ValueKey('home-episodes-list'),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              scrollDirection: Axis.horizontal,
-              itemCount: episodes.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 14),
-              itemBuilder: (context, index) {
-                final episode = episodes[index];
-                return _EpisodeCard(
-                  episode: episode,
-                  onTap: () => onEpisodeSelected(episode),
-                );
-              },
+          HomeLoadStatus.success => NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification.metrics.extentAfter < 320) onLoadMore();
+              return false;
+            },
+            child: SizedBox(
+              height: 116,
+              child: ListView.separated(
+                key: const ValueKey('home-episodes-list'),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                itemCount: episodes.length + (hasMore ? 1 : 0),
+                separatorBuilder: (_, _) => const SizedBox(width: 14),
+                itemBuilder: (context, index) {
+                  if (index == episodes.length) {
+                    return _HorizontalLoadMore(
+                      isLoading: isLoadingMore,
+                      errorMessage: loadMoreError,
+                      onRetry: onRetryLoadMore,
+                    );
+                  }
+                  final episode = episodes[index];
+                  return _EpisodeCard(
+                    episode: episode,
+                    onTap: () => onEpisodeSelected(episode),
+                  );
+                },
+              ),
             ),
           ),
         },
       ],
     );
   }
+}
+
+class _HorizontalLoadMore extends StatelessWidget {
+  const _HorizontalLoadMore({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
+  });
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 180,
+    child: Center(
+      child:
+          errorMessage != null
+              ? TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Tentar novamente'),
+              )
+              : isLoading
+              ? const CircularProgressIndicator()
+              : const SizedBox.shrink(),
+    ),
+  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -145,26 +195,17 @@ class _EpisodeCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Row(
-            children: [
-              FilledButton.icon(
-                onPressed: onTap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.blue,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.info_outline, size: 22),
-                label: const Text('Saiba mais'),
-              ),
-              const Spacer(),
-              const Icon(Icons.favorite, color: AppColors.blue, size: 30),
-            ],
+          FilledButton.icon(
+            onPressed: onTap,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.blue,
+              foregroundColor: AppColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.info_outline, size: 22),
+            label: const Text('Saiba mais'),
           ),
         ],
       ),

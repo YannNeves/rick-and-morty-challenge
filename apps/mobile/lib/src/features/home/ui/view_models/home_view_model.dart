@@ -20,10 +20,6 @@ class HomeViewModel extends ChangeNotifier {
        _episodeRepository = episodeRepository,
        _locationRepository = locationRepository;
 
-  static const characterLimit = 10;
-  static const episodeLimit = 10;
-  static const locationLimit = 10;
-
   final CharacterRepository _characterRepository;
   final EpisodeRepository _episodeRepository;
   final LocationRepository _locationRepository;
@@ -37,6 +33,18 @@ class HomeViewModel extends ChangeNotifier {
   HomeLoadStatus _charactersStatus = HomeLoadStatus.initial;
   List<CharacterSummary> _characters = const [];
   String? _charactersErrorMessage;
+  int _episodePage = 0;
+  int _locationPage = 0;
+  int _characterPage = 0;
+  bool _hasMoreEpisodes = true;
+  bool _hasMoreLocations = true;
+  bool _hasMoreCharacters = true;
+  bool _isLoadingMoreEpisodes = false;
+  bool _isLoadingMoreLocations = false;
+  bool _isLoadingMoreCharacters = false;
+  String? _moreEpisodesError;
+  String? _moreLocationsError;
+  String? _moreCharactersError;
 
   HomeLoadStatus get status => _status;
   UnmodifiableListView<EpisodeSummary> get episodes =>
@@ -50,74 +58,181 @@ class HomeViewModel extends ChangeNotifier {
   UnmodifiableListView<CharacterSummary> get characters =>
       UnmodifiableListView(_characters);
   String? get charactersErrorMessage => _charactersErrorMessage;
+  bool get hasMoreEpisodes => _hasMoreEpisodes;
+  bool get hasMoreLocations => _hasMoreLocations;
+  bool get hasMoreCharacters => _hasMoreCharacters;
+  bool get isLoadingMoreEpisodes => _isLoadingMoreEpisodes;
+  bool get isLoadingMoreLocations => _isLoadingMoreLocations;
+  bool get isLoadingMoreCharacters => _isLoadingMoreCharacters;
+  String? get moreEpisodesError => _moreEpisodesError;
+  String? get moreLocationsError => _moreLocationsError;
+  String? get moreCharactersError => _moreCharactersError;
 
   Future<void> loadEpisodes() async {
+    _episodePage = 0;
+    _hasMoreEpisodes = true;
+    _episodes = const [];
     _status = HomeLoadStatus.loading;
     _errorMessage = null;
+    _moreEpisodesError = null;
     notifyListeners();
 
-    try {
-      final page = await _episodeRepository.getEpisodes();
-      final ordered = [...page.episodes]..sort(_compareBySeasonAndEpisode);
+    await _loadEpisodesPage();
+  }
 
-      _episodes = List.unmodifiable(ordered.take(episodeLimit));
+  Future<void> _loadEpisodesPage() async {
+    try {
+      final page = await _episodeRepository.getEpisodes(page: _episodePage + 1);
+      final ordered = [..._episodes, ...page.episodes]
+        ..sort(_compareBySeasonAndEpisode);
+
+      _episodePage = page.page;
+      _hasMoreEpisodes = page.hasNextPage;
+      _episodes = List.unmodifiable(ordered);
       _status =
           _episodes.isEmpty ? HomeLoadStatus.empty : HomeLoadStatus.success;
     } on Exception catch (error) {
-      _episodes = const [];
-      _errorMessage = error.toString();
-      _status = HomeLoadStatus.failure;
+      if (_episodes.isEmpty) {
+        _errorMessage = error.toString();
+        _status = HomeLoadStatus.failure;
+      } else {
+        _moreEpisodesError = 'Não foi possível carregar mais episódios.';
+      }
     }
 
     notifyListeners();
+  }
+
+  Future<void> loadMoreEpisodes() async {
+    if (!_hasMoreEpisodes ||
+        _isLoadingMoreEpisodes ||
+        _moreEpisodesError != null) {
+      return;
+    }
+    _isLoadingMoreEpisodes = true;
+    notifyListeners();
+    await _loadEpisodesPage();
+    _isLoadingMoreEpisodes = false;
+    notifyListeners();
+  }
+
+  Future<void> retryMoreEpisodes() async {
+    _moreEpisodesError = null;
+    await loadMoreEpisodes();
   }
 
   Future<void> loadLocations() async {
+    _locationPage = 0;
+    _hasMoreLocations = true;
+    _locations = const [];
     _locationsStatus = HomeLoadStatus.loading;
     _locationsErrorMessage = null;
+    _moreLocationsError = null;
     notifyListeners();
 
+    await _loadLocationsPage();
+  }
+
+  Future<void> _loadLocationsPage() async {
     try {
-      final page = await _locationRepository.getLocations();
-      final ordered = [...page.locations]..sort(
+      final page = await _locationRepository.getLocations(
+        page: _locationPage + 1,
+      );
+      final ordered = [..._locations, ...page.locations]..sort(
         (left, right) =>
             left.name.toLowerCase().compareTo(right.name.toLowerCase()),
       );
 
-      _locations = List.unmodifiable(ordered.take(locationLimit));
+      _locationPage = page.page;
+      _hasMoreLocations = page.hasNextPage;
+      _locations = List.unmodifiable(ordered);
       _locationsStatus =
           _locations.isEmpty ? HomeLoadStatus.empty : HomeLoadStatus.success;
     } on Exception catch (error) {
-      _locations = const [];
-      _locationsErrorMessage = error.toString();
-      _locationsStatus = HomeLoadStatus.failure;
+      if (_locations.isEmpty) {
+        _locationsErrorMessage = error.toString();
+        _locationsStatus = HomeLoadStatus.failure;
+      } else {
+        _moreLocationsError = 'Não foi possível carregar mais localizações.';
+      }
     }
 
     notifyListeners();
   }
 
+  Future<void> loadMoreLocations() async {
+    if (!_hasMoreLocations ||
+        _isLoadingMoreLocations ||
+        _moreLocationsError != null) {
+      return;
+    }
+    _isLoadingMoreLocations = true;
+    notifyListeners();
+    await _loadLocationsPage();
+    _isLoadingMoreLocations = false;
+    notifyListeners();
+  }
+
+  Future<void> retryMoreLocations() async {
+    _moreLocationsError = null;
+    await loadMoreLocations();
+  }
+
   Future<void> loadCharacters() async {
+    _characterPage = 0;
+    _hasMoreCharacters = true;
+    _characters = const [];
     _charactersStatus = HomeLoadStatus.loading;
     _charactersErrorMessage = null;
+    _moreCharactersError = null;
     notifyListeners();
 
+    await _loadCharactersPage();
+  }
+
+  Future<void> _loadCharactersPage() async {
     try {
-      final page = await _characterRepository.getCharacters();
-      final ordered = [...page.characters]..sort(
+      final page = await _characterRepository.getCharacters(
+        page: _characterPage + 1,
+      );
+      final ordered = [..._characters, ...page.characters]..sort(
         (left, right) =>
             left.name.toLowerCase().compareTo(right.name.toLowerCase()),
       );
 
-      _characters = List.unmodifiable(ordered.take(characterLimit));
+      _characterPage = page.page;
+      _hasMoreCharacters = page.hasNextPage;
+      _characters = List.unmodifiable(ordered);
       _charactersStatus =
           _characters.isEmpty ? HomeLoadStatus.empty : HomeLoadStatus.success;
     } on Exception catch (error) {
-      _characters = const [];
-      _charactersErrorMessage = error.toString();
-      _charactersStatus = HomeLoadStatus.failure;
+      if (_characters.isEmpty) {
+        _charactersErrorMessage = error.toString();
+        _charactersStatus = HomeLoadStatus.failure;
+      } else {
+        _moreCharactersError = 'Não foi possível carregar mais personagens.';
+      }
     }
 
     notifyListeners();
+  }
+
+  Future<void> loadMoreCharacters() async {
+    if (!_hasMoreCharacters ||
+        _isLoadingMoreCharacters ||
+        _moreCharactersError != null) {
+      return;
+    }
+    _isLoadingMoreCharacters = true;
+    notifyListeners();
+    await _loadCharactersPage();
+    _isLoadingMoreCharacters = false;
+    notifyListeners();
+  }
+
+  Future<void> retryMoreCharacters() async {
+    _moreCharactersError = null;
+    await loadMoreCharacters();
   }
 
   static int _compareBySeasonAndEpisode(

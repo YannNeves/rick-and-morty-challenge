@@ -9,6 +9,7 @@ class AppSearchBar extends StatelessWidget {
     required this.onChanged,
     this.onFilterPressed,
     this.hasActiveFilters = false,
+    this.padding = const EdgeInsets.fromLTRB(24, 14, 24, 8),
     super.key,
   });
 
@@ -17,13 +18,14 @@ class AppSearchBar extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback? onFilterPressed;
   final bool hasActiveFilters;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 8),
+      padding: padding,
       child: Row(
         children: [
           Expanded(

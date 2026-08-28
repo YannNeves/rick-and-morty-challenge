@@ -11,6 +11,10 @@ class CharactersSection extends StatelessWidget {
     required this.onRetry,
     required this.onShowAll,
     required this.onCharacterSelected,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onRetryLoadMore,
+    this.loadMoreError,
     this.errorMessage,
     super.key,
   });
@@ -21,6 +25,10 @@ class CharactersSection extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onShowAll;
   final ValueChanged<CharacterSummary> onCharacterSelected;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onRetryLoadMore;
+  final String? loadMoreError;
 
   @override
   Widget build(BuildContext context) {
@@ -45,24 +53,42 @@ class CharactersSection extends StatelessWidget {
                 errorMessage ?? 'Não foi possível carregar os personagens.',
             onRetry: onRetry,
           ),
-          HomeLoadStatus.success => ListView.separated(
-            key: const ValueKey('home-characters-list'),
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: characters.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final character = characters[index];
-              return CharacterCard(
-                name: character.name,
-                status: character.status,
-                species: character.species,
-                image: character.image,
-                origin: character.origin,
-                onTap: () => onCharacterSelected(character),
-              );
-            },
+          HomeLoadStatus.success => Column(
+            children: [
+              ListView.separated(
+                key: const ValueKey('home-characters-list'),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: characters.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final character = characters[index];
+                  return CharacterCard(
+                    name: character.name,
+                    status: character.status,
+                    species: character.species,
+                    image: character.image,
+                    origin: character.origin,
+                    onTap: () => onCharacterSelected(character),
+                  );
+                },
+              ),
+              if (hasMore)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child:
+                      loadMoreError != null
+                          ? OutlinedButton.icon(
+                            onPressed: onRetryLoadMore,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Tentar novamente'),
+                          )
+                          : isLoadingMore
+                          ? const CircularProgressIndicator()
+                          : const SizedBox(height: 40),
+                ),
+            ],
           ),
         },
       ],

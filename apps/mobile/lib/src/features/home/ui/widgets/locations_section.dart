@@ -12,6 +12,11 @@ class LocationsSection extends StatelessWidget {
     required this.onRetry,
     required this.onShowAll,
     required this.onLocationSelected,
+    required this.hasMore,
+    required this.isLoadingMore,
+    required this.onLoadMore,
+    required this.onRetryLoadMore,
+    this.loadMoreError,
     this.errorMessage,
     super.key,
   });
@@ -22,6 +27,11 @@ class LocationsSection extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onShowAll;
   final ValueChanged<LocationSummary> onLocationSelected;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
+  final VoidCallback onRetryLoadMore;
+  final String? loadMoreError;
 
   @override
   Widget build(BuildContext context) {
@@ -46,27 +56,67 @@ class LocationsSection extends StatelessWidget {
                 errorMessage ?? 'Não foi possível carregar as localizações.',
             onRetry: onRetry,
           ),
-          HomeLoadStatus.success => SizedBox(
-            height: 240,
-            child: ListView.separated(
-              key: const ValueKey('home-locations-list'),
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              scrollDirection: Axis.horizontal,
-              itemCount: locations.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 14),
-              itemBuilder: (context, index) {
-                final location = locations[index];
-                return _LocationCard(
-                  location: location,
-                  onTap: () => onLocationSelected(location),
-                );
-              },
+          HomeLoadStatus.success => NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification.metrics.extentAfter < 320) onLoadMore();
+              return false;
+            },
+            child: SizedBox(
+              height: 240,
+              child: ListView.separated(
+                key: const ValueKey('home-locations-list'),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                scrollDirection: Axis.horizontal,
+                itemCount: locations.length + (hasMore ? 1 : 0),
+                separatorBuilder: (_, _) => const SizedBox(width: 14),
+                itemBuilder: (context, index) {
+                  if (index == locations.length) {
+                    return _HorizontalLoadMore(
+                      isLoading: isLoadingMore,
+                      errorMessage: loadMoreError,
+                      onRetry: onRetryLoadMore,
+                    );
+                  }
+                  final location = locations[index];
+                  return _LocationCard(
+                    location: location,
+                    onTap: () => onLocationSelected(location),
+                  );
+                },
+              ),
             ),
           ),
         },
       ],
     );
   }
+}
+
+class _HorizontalLoadMore extends StatelessWidget {
+  const _HorizontalLoadMore({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
+  });
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 176,
+    child: Center(
+      child:
+          errorMessage != null
+              ? TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Tentar novamente'),
+              )
+              : isLoading
+              ? const CircularProgressIndicator()
+              : const SizedBox.shrink(),
+    ),
+  );
 }
 
 class _SectionHeader extends StatelessWidget {
@@ -152,7 +202,7 @@ class _LocationCard extends StatelessWidget {
                         context,
                       ).textTheme.titleMedium?.copyWith(color: AppColors.blue),
                     ),
-                    const SizedBox(height: 16),
+                    const Spacer(),
                     FilledButton.icon(
                       onPressed: onTap,
                       style: FilledButton.styleFrom(
@@ -168,8 +218,7 @@ class _LocationCard extends StatelessWidget {
                       icon: const Icon(Icons.info_outline, size: 22),
                       label: const Text('Saiba mais'),
                     ),
-                    const Spacer(),
-                    const Icon(Icons.favorite, color: AppColors.blue, size: 32),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),

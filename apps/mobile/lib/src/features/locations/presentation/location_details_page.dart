@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/navigation/widgets/app_search_bar.dart';
+import '../../../app/navigation/widgets/web_detail_header.dart';
 import '../../../core/ui/display_value.dart';
 import '../../characters/presentation/widgets/character_card.dart';
 import '../../characters/presentation/widgets/character_sort_drawer.dart';
@@ -21,6 +23,7 @@ class LocationDetailsPage extends StatefulWidget {
     required this.locationRepository,
     required this.characterRepository,
     required this.episodeRepository,
+    this.onGoHome,
     super.key,
   });
 
@@ -28,6 +31,7 @@ class LocationDetailsPage extends StatefulWidget {
   final LocationRepository locationRepository;
   final CharacterRepository characterRepository;
   final EpisodeRepository episodeRepository;
+  final VoidCallback? onGoHome;
 
   @override
   State<LocationDetailsPage> createState() => _LocationDetailsPageState();
@@ -52,12 +56,22 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.location.name.toUpperCase(),
-          style: const TextStyle(color: AppColors.blue),
-        ),
-      ),
+      appBar:
+          kIsWeb
+              ? WebDetailHeader(
+                title: widget.location.name.toUpperCase(),
+                onBack: () => Navigator.of(context).maybePop(),
+                onHome: _goHome,
+              )
+              : AppBar(
+                leading: BackButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                title: Text(
+                  widget.location.name.toUpperCase(),
+                  style: const TextStyle(color: AppColors.blue),
+                ),
+              ),
       body: FutureBuilder<LocationDetails>(
         future: _details,
         builder: (context, snapshot) {
@@ -89,33 +103,56 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
             return result *
                 (_sortOrder == CharacterSortOrder.descending ? -1 : 1);
           });
+          final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding =
+              isDesktop && width > 1288 ? (width - 1240) / 2 : 16.0;
           return CustomScrollView(
             key: const ValueKey('location-details-page'),
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    20,
+                    horizontalPadding,
+                    20,
+                  ),
                   child: _LocationHeader(details: details),
                 ),
               ),
               if (details.residents.length > 1)
                 SliverToBoxAdapter(
-                  child: AppSearchBar(
-                    initialValue: '',
-                    hintText: 'Busque por residente',
-                    onChanged:
-                        (value) => setState(
-                          () => _searchQuery = value.trim().toLowerCase(),
-                        ),
-                    hasActiveFilters:
-                        _sortBy != CharacterSortBy.name ||
-                        _sortOrder != CharacterSortOrder.ascending,
-                    onFilterPressed: _openSort,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1240),
+                      child: AppSearchBar(
+                        initialValue: '',
+                        hintText: 'Busque por residente',
+                        padding:
+                            kIsWeb
+                                ? const EdgeInsets.symmetric(vertical: 14)
+                                : const EdgeInsets.fromLTRB(24, 14, 24, 8),
+                        onChanged:
+                            (value) => setState(
+                              () => _searchQuery = value.trim().toLowerCase(),
+                            ),
+                        hasActiveFilters:
+                            _sortBy != CharacterSortBy.name ||
+                            _sortOrder != CharacterSortOrder.ascending,
+                        onFilterPressed: _openSort,
+                      ),
+                    ),
                   ),
                 ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    isDesktop ? horizontalPadding : 24,
+                    0,
+                    isDesktop ? horizontalPadding : 24,
+                    16,
+                  ),
                   child: Text(
                     'Residentes',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -133,24 +170,52 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  sliver: SliverList.builder(
-                    itemCount: residents.length,
-                    itemBuilder: (context, index) {
-                      final resident = residents[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: CharacterCard(
-                          name: resident.name,
-                          status: resident.status,
-                          species: resident.species,
-                          image: resident.image,
-                          origin: resident.origin,
-                          onTap: () => _openCharacter(resident),
-                        ),
-                      );
-                    },
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    0,
+                    horizontalPadding,
+                    24,
                   ),
+                  sliver:
+                      isDesktop
+                          ? SliverGrid.builder(
+                            itemCount: residents.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  childAspectRatio: 0.73,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                            itemBuilder: (context, index) {
+                              final resident = residents[index];
+                              return CharacterCard(
+                                name: resident.name,
+                                status: resident.status,
+                                species: resident.species,
+                                image: resident.image,
+                                origin: resident.origin,
+                                onTap: () => _openCharacter(resident),
+                              );
+                            },
+                          )
+                          : SliverList.builder(
+                            itemCount: residents.length,
+                            itemBuilder: (context, index) {
+                              final resident = residents[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: CharacterCard(
+                                  name: resident.name,
+                                  status: resident.status,
+                                  species: resident.species,
+                                  image: resident.image,
+                                  origin: resident.origin,
+                                  onTap: () => _openCharacter(resident),
+                                ),
+                              );
+                            },
+                          ),
                 ),
             ],
           );
@@ -182,9 +247,15 @@ class _LocationDetailsPageState extends State<LocationDetailsPage> {
               characterRepository: widget.characterRepository,
               episodeRepository: widget.episodeRepository,
               locationRepository: widget.locationRepository,
+              onGoHome: widget.onGoHome,
             ),
       ),
     );
+  }
+
+  void _goHome() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    widget.onGoHome?.call();
   }
 }
 

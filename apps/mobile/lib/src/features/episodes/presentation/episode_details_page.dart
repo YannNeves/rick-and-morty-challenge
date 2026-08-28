@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/navigation/widgets/app_search_bar.dart';
+import '../../../app/navigation/widgets/web_detail_header.dart';
 import '../../characters/data/character_repository.dart';
 import '../../characters/domain/character_models.dart' as character_models;
 import '../../characters/presentation/character_details_page.dart';
@@ -21,6 +23,7 @@ class EpisodeDetailsPage extends StatefulWidget {
     required this.episodeRepository,
     required this.characterRepository,
     required this.locationRepository,
+    this.onGoHome,
     super.key,
   });
 
@@ -28,6 +31,7 @@ class EpisodeDetailsPage extends StatefulWidget {
   final EpisodeRepository episodeRepository;
   final CharacterRepository characterRepository;
   final LocationRepository locationRepository;
+  final VoidCallback? onGoHome;
 
   @override
   State<EpisodeDetailsPage> createState() => _EpisodeDetailsPageState();
@@ -56,12 +60,23 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
-          style: const TextStyle(color: AppColors.blue),
-        ),
-      ),
+      appBar:
+          kIsWeb
+              ? WebDetailHeader(
+                title:
+                    '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+                onBack: () => Navigator.of(context).maybePop(),
+                onHome: _goHome,
+              )
+              : AppBar(
+                leading: BackButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+                title: Text(
+                  '${widget.episode.name.toUpperCase()} - ${widget.episode.code}',
+                  style: const TextStyle(color: AppColors.blue),
+                ),
+              ),
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
@@ -89,31 +104,56 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
                     character.name.toLowerCase().contains(_searchQuery),
               )
               .toList(growable: false);
+          final isDesktop = MediaQuery.sizeOf(context).width >= 900;
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding =
+              isDesktop && width > 1288 ? (width - 1240) / 2 : 16.0;
 
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    20,
+                    horizontalPadding,
+                    8,
+                  ),
                   child: _EpisodeHeader(details: details),
                 ),
               ),
               SliverToBoxAdapter(
-                child: AppSearchBar(
-                  initialValue: '',
-                  hintText: 'Busque por personagem',
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value.trim().toLowerCase());
-                  },
-                  hasActiveFilters:
-                      _controller.sortBy != CharacterSortBy.name ||
-                      _controller.sortOrder != CharacterSortOrder.ascending,
-                  onFilterPressed: _openOptions,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1240),
+                    child: AppSearchBar(
+                      initialValue: '',
+                      hintText: 'Busque por personagem',
+                      padding:
+                          kIsWeb
+                              ? const EdgeInsets.symmetric(vertical: 14)
+                              : const EdgeInsets.fromLTRB(24, 14, 24, 8),
+                      onChanged: (value) {
+                        setState(
+                          () => _searchQuery = value.trim().toLowerCase(),
+                        );
+                      },
+                      hasActiveFilters:
+                          _controller.sortBy != CharacterSortBy.name ||
+                          _controller.sortOrder != CharacterSortOrder.ascending,
+                      onFilterPressed: _openOptions,
+                    ),
+                  ),
                 ),
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    isDesktop ? horizontalPadding : 24,
+                    12,
+                    isDesktop ? horizontalPadding : 24,
+                    16,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -129,24 +169,52 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                sliver: SliverList.builder(
-                  itemCount: filteredCharacters.length,
-                  itemBuilder: (context, index) {
-                    final character = filteredCharacters[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: CharacterCard(
-                        name: character.name,
-                        status: character.status,
-                        species: character.species,
-                        image: character.image,
-                        origin: character.origin,
-                        onTap: () => _openCharacter(character),
-                      ),
-                    );
-                  },
+                padding: EdgeInsets.fromLTRB(
+                  horizontalPadding,
+                  0,
+                  horizontalPadding,
+                  24,
                 ),
+                sliver:
+                    isDesktop
+                        ? SliverGrid.builder(
+                          itemCount: filteredCharacters.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                childAspectRatio: 0.73,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          itemBuilder: (context, index) {
+                            final character = filteredCharacters[index];
+                            return CharacterCard(
+                              name: character.name,
+                              status: character.status,
+                              species: character.species,
+                              image: character.image,
+                              origin: character.origin,
+                              onTap: () => _openCharacter(character),
+                            );
+                          },
+                        )
+                        : SliverList.builder(
+                          itemCount: filteredCharacters.length,
+                          itemBuilder: (context, index) {
+                            final character = filteredCharacters[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: CharacterCard(
+                                name: character.name,
+                                status: character.status,
+                                species: character.species,
+                                image: character.image,
+                                origin: character.origin,
+                                onTap: () => _openCharacter(character),
+                              ),
+                            );
+                          },
+                        ),
               ),
             ],
           );
@@ -186,9 +254,15 @@ class _EpisodeDetailsPageState extends State<EpisodeDetailsPage> {
               characterRepository: widget.characterRepository,
               episodeRepository: widget.episodeRepository,
               locationRepository: widget.locationRepository,
+              onGoHome: widget.onGoHome,
             ),
       ),
     );
+  }
+
+  void _goHome() {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    widget.onGoHome?.call();
   }
 }
 
