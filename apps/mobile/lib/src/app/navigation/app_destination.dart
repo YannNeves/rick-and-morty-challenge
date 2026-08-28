@@ -5,9 +5,9 @@ enum AppDestination {
     iconAsset: 'assets/branding/home.png',
     isRasterIcon: true,
   ),
-  planets(
-    label: 'Planetas',
-    routeLabel: 'Rota Planetas',
+  locations(
+    label: 'Localização',
+    routeLabel: 'Rota Localização',
     iconAsset: 'assets/branding/planet.svg',
   ),
   episodes(
@@ -35,7 +35,7 @@ enum AppDestination {
 
   String get searchHint => switch (this) {
     AppDestination.home => '',
-    AppDestination.planets => 'Busque por planeta',
+    AppDestination.locations => 'Busque por localização',
     AppDestination.episodes => 'Busque por episódio',
     AppDestination.characters => 'Busque por personagem',
   };

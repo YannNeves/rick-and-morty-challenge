@@ -22,6 +22,9 @@ class AppShellViewModel extends ChangeNotifier {
   }
 
   void updateSearchQuery(String value) {
-    _searchQuery = value.trim();
+    final query = value.trim();
+    if (_searchQuery == query) return;
+    _searchQuery = query;
+    notifyListeners();
   }
 }
