@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { sortCharacters } from "./character-sorter.js";
-import type { CharacterSummary } from "./episode.models.js";
+import type { CharacterSummary } from "../characters/character.models.js";
 
 const characters: CharacterSummary[] = [
   {

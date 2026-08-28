@@ -5,7 +5,8 @@ import type {
 } from "../../integrations/rick-and-morty/types.js";
 import { extractIdsFromUrls } from "../../integrations/rick-and-morty/url-utils.js";
 import { sortCharacters } from "./character-sorter.js";
-import { toCharacterSummary, toEpisodeSummary } from "./episode.mapper.js";
+import { toCharacterSummary } from "../characters/character.mapper.js";
+import { toEpisodeSummary } from "./episode.mapper.js";
 import type {
   CharacterSortField,
   EpisodeDetails,

@@ -5,6 +5,7 @@ import test from "node:test";
 import { createApp } from "./app.js";
 import type { AppEnv } from "./config/env.js";
 import type {
+  CharacterListFilters,
   EpisodeListFilters,
   RickAndMortyCharacter,
   RickAndMortyEpisode,
@@ -32,6 +33,15 @@ const episode: RickAndMortyEpisode = {
 };
 
 class FakeGateway implements RickAndMortyGateway {
+  async listCharacters(
+    _filters: CharacterListFilters
+  ): Promise<RickAndMortyPage<RickAndMortyCharacter>> {
+    return {
+      info: { count: 1, pages: 1, next: null, prev: null },
+      results: [await this.getCharacters().then((items) => items[0]!)]
+    };
+  }
+
   async listEpisodes(
     _filters: EpisodeListFilters
   ): Promise<RickAndMortyPage<RickAndMortyEpisode>> {
@@ -119,6 +129,33 @@ test("GET /api/v1/episodes returns mapped episodes", async () => {
 test("GET /api/v1/episodes/:id rejects invalid ids", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/episodes/zero`);
+    const body = (await response.json()) as { error: { code: string } };
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error.code, "BAD_REQUEST");
+  });
+});
+
+test("GET /api/v1/characters returns a mapped character page", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(
+      `${baseUrl}/api/v1/characters?name=rick&status=alive&gender=male`
+    );
+    const body = (await response.json()) as {
+      totalItems: number;
+      characters: Array<{ name: string; episodeCount: number }>;
+    };
+
+    assert.equal(response.status, 200);
+    assert.equal(body.totalItems, 1);
+    assert.equal(body.characters[0]?.name, "Rick Sanchez");
+    assert.equal(body.characters[0]?.episodeCount, 1);
+  });
+});
+
+test("GET /api/v1/characters rejects invalid enum filters", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/characters?status=sleeping`);
     const body = (await response.json()) as { error: { code: string } };
 
     assert.equal(response.status, 400);

@@ -1,12 +1,18 @@
 import express from "express";
 
 import type { AppEnv } from "./config/env.js";
-import type { RickAndMortyGateway } from "./integrations/rick-and-morty/types.js";
+import type {
+  CharactersGateway,
+  RickAndMortyGateway
+} from "./integrations/rick-and-morty/types.js";
 import { cors, securityHeaders } from "./shared/http/security.js";
 import { errorHandler, notFoundHandler } from "./shared/http/error-handler.js";
 import { createRouter } from "./http/routes.js";
 
-export const createApp = (env: AppEnv, gateway: RickAndMortyGateway) => {
+export const createApp = (
+  env: AppEnv,
+  gateway: RickAndMortyGateway & CharactersGateway
+) => {
   const app = express();
 
   app.disable("x-powered-by");

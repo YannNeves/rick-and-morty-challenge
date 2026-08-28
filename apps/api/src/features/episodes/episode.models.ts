@@ -6,18 +6,7 @@ export type EpisodeSummary = {
   characterCount: number;
 };
 
-export type CharacterSummary = {
-  id: number;
-  name: string;
-  status: string;
-  species: string;
-  type: string;
-  gender: string;
-  image: string;
-  origin: string;
-  location: string;
-  episodeCount: number;
-};
+import type { CharacterSummary } from "../characters/character.models.js";
 
 export type EpisodeDetails = EpisodeSummary & {
   characters: CharacterSummary[];
