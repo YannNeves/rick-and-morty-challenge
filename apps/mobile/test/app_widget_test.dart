@@ -175,12 +175,13 @@ void main() {
       (widget) =>
           widget is Scrollable && widget.axisDirection == AxisDirection.down,
     );
-    await tester.scrollUntilVisible(
-      find.text('Localizações'),
-      300,
-      scrollable: characterDetailsScroll,
+    await tester.drag(
+      find.byKey(const ValueKey('character-details-page')),
+      const Offset(0, -400),
     );
-    expect(find.text('Localizações'), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Origem'), findsOneWidget);
+    expect(find.text('Localização atual'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Episódios'),
       300,

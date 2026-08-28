@@ -26,6 +26,12 @@ abstract final class AppTheme {
         surface: background,
         onSurface: foreground,
       ),
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        backgroundColor: background,
+        foregroundColor: foreground,
+        surfaceTintColor: Colors.transparent,
+      ),
       textTheme: ThemeData(
         brightness: brightness,
       ).textTheme.apply(bodyColor: foreground, displayColor: foreground),

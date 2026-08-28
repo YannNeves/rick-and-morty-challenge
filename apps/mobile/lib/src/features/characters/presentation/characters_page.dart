@@ -19,6 +19,7 @@ class CharactersPage extends StatefulWidget {
     required this.locationRepository,
     required this.searchQuery,
     required this.filters,
+    this.onGoHome,
     super.key,
   });
 
@@ -27,6 +28,7 @@ class CharactersPage extends StatefulWidget {
   final LocationRepository locationRepository;
   final String searchQuery;
   final Map<String, String> filters;
+  final VoidCallback? onGoHome;
 
   @override
   State<CharactersPage> createState() => _CharactersPageState();
@@ -94,6 +96,64 @@ class _CharactersPageState extends State<CharactersPage> {
           return const _NoSearchResults();
         }
 
+        if (MediaQuery.sizeOf(context).width >= 900) {
+          final width = MediaQuery.sizeOf(context).width;
+          final horizontalPadding = width > 1288 ? (width - 1240) / 2 : 24.0;
+          return RefreshIndicator(
+            onRefresh:
+                () => _controller.load(
+                  name: widget.searchQuery,
+                  filters: widget.filters,
+                ),
+            child: CustomScrollView(
+              key: const ValueKey('characters-page-grid'),
+              controller: _scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1240),
+                      child: const Padding(
+                        padding: EdgeInsets.fromLTRB(24, 28, 24, 24),
+                        child: _CharactersHeader(),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: SliverGrid.builder(
+                    itemCount: _controller.characters.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.73,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                    itemBuilder: (context, index) {
+                      final character = _controller.characters[index];
+                      return _CharacterCard(
+                        character: character,
+                        onTap: () => _openCharacter(character),
+                      );
+                    },
+                  ),
+                ),
+                if (_controller.hasNextPage)
+                  SliverToBoxAdapter(
+                    child: _PaginationFooter(
+                      isLoading: _controller.isLoadingMore,
+                      errorMessage: _controller.loadMoreErrorMessage,
+                      onRetry: _controller.retryLoadMore,
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              ],
+            ),
+          );
+        }
+
         return RefreshIndicator(
           onRefresh:
               () => _controller.load(
@@ -114,9 +174,10 @@ class _CharactersPageState extends State<CharactersPage> {
                 return const _CharactersHeader();
               }
               if (index > _controller.characters.length) {
-                return const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Center(child: CircularProgressIndicator()),
+                return _PaginationFooter(
+                  isLoading: _controller.isLoadingMore,
+                  errorMessage: _controller.loadMoreErrorMessage,
+                  onRetry: _controller.retryLoadMore,
                 );
               }
               final character = _controller.characters[index - 1];
@@ -146,7 +207,53 @@ class _CharactersPageState extends State<CharactersPage> {
               characterRepository: widget.characterRepository,
               episodeRepository: widget.episodeRepository,
               locationRepository: widget.locationRepository,
+              onGoHome: widget.onGoHome,
             ),
+      ),
+    );
+  }
+}
+
+class _PaginationFooter extends StatelessWidget {
+  const _PaginationFooter({
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
+  });
+
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (errorMessage != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child:
+            isLoading
+                ? const CircularProgressIndicator()
+                : const SizedBox(height: 40),
       ),
     );
   }
@@ -216,20 +323,13 @@ class _CharacterCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      character.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.favorite, color: AppColors.blue, size: 36),
-                ],
+              Text(
+                character.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               _Attribute(

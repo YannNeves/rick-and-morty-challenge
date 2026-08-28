@@ -10,7 +10,7 @@ import 'package:rick_and_morty_challenge/src/features/locations/data/location_re
 import 'package:rick_and_morty_challenge/src/features/locations/domain/location_models.dart';
 
 void main() {
-  test('orders by season and episode and limits the section to ten', () async {
+  test('orders the complete first page by season and episode', () async {
     final viewModel = HomeViewModel(
       characterRepository: _CharacterRepositoryStub(),
       episodeRepository: _EpisodeRepositoryStub(),
@@ -20,46 +20,40 @@ void main() {
     await viewModel.loadEpisodes();
 
     expect(viewModel.status, HomeLoadStatus.success);
-    expect(viewModel.episodes, hasLength(10));
+    expect(viewModel.episodes, hasLength(12));
     expect(viewModel.episodes.first.code, 'S01E01');
-    expect(viewModel.episodes.last.code, 'S02E05');
+    expect(viewModel.episodes.last.code, 'S03E01');
   });
 
-  test(
-    'orders locations alphabetically and limits the section to ten',
-    () async {
-      final viewModel = HomeViewModel(
-        characterRepository: _CharacterRepositoryStub(),
-        episodeRepository: _EpisodeRepositoryStub(),
-        locationRepository: _LocationRepositoryStub(),
-      );
+  test('orders the complete first page of locations alphabetically', () async {
+    final viewModel = HomeViewModel(
+      characterRepository: _CharacterRepositoryStub(),
+      episodeRepository: _EpisodeRepositoryStub(),
+      locationRepository: _LocationRepositoryStub(),
+    );
 
-      await viewModel.loadLocations();
+    await viewModel.loadLocations();
 
-      expect(viewModel.locationsStatus, HomeLoadStatus.success);
-      expect(viewModel.locations, hasLength(10));
-      expect(viewModel.locations.first.name, 'Location A');
-      expect(viewModel.locations.last.name, 'Location J');
-    },
-  );
+    expect(viewModel.locationsStatus, HomeLoadStatus.success);
+    expect(viewModel.locations, hasLength(12));
+    expect(viewModel.locations.first.name, 'Location A');
+    expect(viewModel.locations.last.name, 'Location L');
+  });
 
-  test(
-    'orders characters alphabetically and limits the section to ten',
-    () async {
-      final viewModel = HomeViewModel(
-        characterRepository: _CharacterRepositoryStub(),
-        episodeRepository: _EpisodeRepositoryStub(),
-        locationRepository: _LocationRepositoryStub(),
-      );
+  test('orders the complete first page of characters alphabetically', () async {
+    final viewModel = HomeViewModel(
+      characterRepository: _CharacterRepositoryStub(),
+      episodeRepository: _EpisodeRepositoryStub(),
+      locationRepository: _LocationRepositoryStub(),
+    );
 
-      await viewModel.loadCharacters();
+    await viewModel.loadCharacters();
 
-      expect(viewModel.charactersStatus, HomeLoadStatus.success);
-      expect(viewModel.characters, hasLength(10));
-      expect(viewModel.characters.first.name, 'Character A');
-      expect(viewModel.characters.last.name, 'Character J');
-    },
-  );
+    expect(viewModel.charactersStatus, HomeLoadStatus.success);
+    expect(viewModel.characters, hasLength(12));
+    expect(viewModel.characters.first.name, 'Character A');
+    expect(viewModel.characters.last.name, 'Character L');
+  });
 }
 
 class _CharacterRepositoryStub implements CharacterRepository {

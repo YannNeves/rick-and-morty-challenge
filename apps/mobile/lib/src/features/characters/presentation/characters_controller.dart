@@ -14,6 +14,7 @@ class CharactersController extends ChangeNotifier {
   CharactersLoadStatus status = CharactersLoadStatus.idle;
   List<CharacterSummary> characters = const [];
   String? errorMessage;
+  String? loadMoreErrorMessage;
   int _page = 0;
   bool _hasNextPage = true;
   bool _isLoadingMore = false;
@@ -34,6 +35,7 @@ class CharactersController extends ChangeNotifier {
     characters = const [];
     status = CharactersLoadStatus.loading;
     errorMessage = null;
+    loadMoreErrorMessage = null;
     notifyListeners();
     await _loadNextPage();
   }
@@ -41,6 +43,7 @@ class CharactersController extends ChangeNotifier {
   Future<void> loadMore() async {
     if (!_hasNextPage ||
         _isLoadingMore ||
+        loadMoreErrorMessage != null ||
         status == CharactersLoadStatus.loading) {
       return;
     }
@@ -49,6 +52,13 @@ class CharactersController extends ChangeNotifier {
     await _loadNextPage();
     _isLoadingMore = false;
     notifyListeners();
+  }
+
+  Future<void> retryLoadMore() async {
+    if (_isLoadingMore || !_hasNextPage) return;
+    loadMoreErrorMessage = null;
+    notifyListeners();
+    await loadMore();
   }
 
   Future<void> _loadNextPage() async {
@@ -66,10 +76,17 @@ class CharactersController extends ChangeNotifier {
       _sort(updated);
       characters = List.unmodifiable(updated);
       status = CharactersLoadStatus.success;
+      loadMoreErrorMessage = null;
       notifyListeners();
     } catch (_) {
-      status = CharactersLoadStatus.failure;
-      errorMessage = 'Não foi possível carregar os personagens.';
+      if (characters.isEmpty) {
+        status = CharactersLoadStatus.failure;
+        errorMessage = 'Não foi possível carregar os personagens.';
+      } else {
+        status = CharactersLoadStatus.success;
+        loadMoreErrorMessage =
+            'Não foi possível carregar mais personagens agora.';
+      }
       notifyListeners();
     }
   }
