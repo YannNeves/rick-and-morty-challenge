@@ -103,6 +103,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Busque por personagem'), findsOneWidget);
+    expect(find.byKey(const ValueKey('characters-page-list')), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Rick',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rick Sanchez'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('global-search-field')),
+      'Morty',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('characters-no-search-results')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('toggles between dark and light themes', (tester) async {

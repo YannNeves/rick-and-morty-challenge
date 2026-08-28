@@ -5,15 +5,15 @@ enum AppDestination {
     iconAsset: 'assets/branding/home.png',
     isRasterIcon: true,
   ),
-  locations(
-    label: 'Localização',
-    routeLabel: 'Rota Localização',
-    iconAsset: 'assets/branding/planet.svg',
-  ),
   episodes(
     label: 'Episódios',
     routeLabel: 'Rota Episódios',
     iconAsset: 'assets/branding/episode.svg',
+  ),
+  locations(
+    label: 'Localização',
+    routeLabel: 'Rota Localização',
+    iconAsset: 'assets/branding/planet.svg',
   ),
   characters(
     label: 'Personagens',
