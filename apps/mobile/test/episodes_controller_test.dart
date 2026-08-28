@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rick_and_morty_challenge/src/features/analytics/analytics_tracker.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/data/episode_repository.dart';
@@ -20,6 +22,23 @@ void main() {
     expect(controller.page?.episodes.single.name, 'Pilot');
     expect(analytics.names, contains('episode_list_viewed'));
   });
+
+  test(
+    'EpisodesController does not wait for analytics to publish data',
+    () async {
+      final analytics = PendingAnalyticsTracker();
+      final controller = EpisodesController(
+        episodeRepository: FakeEpisodeRepository(),
+        analyticsTracker: analytics,
+      );
+
+      await controller.load().timeout(const Duration(milliseconds: 100));
+
+      expect(controller.status, LoadStatus.success);
+      expect(controller.page, isNotNull);
+      analytics.complete();
+    },
+  );
 }
 
 class FakeEpisodeRepository implements EpisodeRepository {
@@ -62,4 +81,16 @@ class RecordingAnalyticsTracker implements AnalyticsTracker {
   }) async {
     names.add(name);
   }
+}
+
+class PendingAnalyticsTracker implements AnalyticsTracker {
+  final _completer = Completer<void>();
+
+  @override
+  Future<void> track(
+    String name, {
+    Map<String, Object?> properties = const {},
+  }) => _completer.future;
+
+  void complete() => _completer.complete();
 }

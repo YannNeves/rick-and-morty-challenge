@@ -13,6 +13,7 @@ type ClientConfig = {
   baseUrl: string;
   timeoutMs: number;
   cacheTtlMs: number;
+  fetchFn?: typeof fetch;
 };
 
 type CacheValue =
@@ -22,9 +23,11 @@ type CacheValue =
 
 export class RickAndMortyHttpClient implements RickAndMortyGateway {
   private readonly cache: InMemoryCache<CacheValue>;
+  private readonly fetchFn: typeof fetch;
 
   constructor(private readonly config: ClientConfig) {
     this.cache = new InMemoryCache<CacheValue>(config.cacheTtlMs);
+    this.fetchFn = config.fetchFn ?? fetch;
   }
 
   async listEpisodes(
@@ -89,18 +92,27 @@ export class RickAndMortyHttpClient implements RickAndMortyGateway {
   }
 
   private async fetchWithRetry(url: URL): Promise<Response> {
-    try {
-      return await this.fetchOnce(url);
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw upstreamError("Rick and Morty API request timed out", {
-          url: url.toString(),
-          timeoutMs: this.config.timeoutMs
-        });
-      }
+    let lastError: unknown;
 
-      return this.fetchOnce(url);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        return await this.fetchOnce(url);
+      } catch (error) {
+        lastError = error;
+      }
     }
+
+    if (lastError instanceof Error && lastError.name === "AbortError") {
+      throw upstreamError("Rick and Morty API request timed out", {
+        url: url.toString(),
+        timeoutMs: this.config.timeoutMs
+      });
+    }
+
+    throw upstreamError("Could not connect to Rick and Morty API", {
+      url: url.toString(),
+      cause: lastError instanceof Error ? lastError.message : String(lastError)
+    });
   }
 
   private async fetchOnce(url: URL): Promise<Response> {
@@ -108,20 +120,11 @@ export class RickAndMortyHttpClient implements RickAndMortyGateway {
     const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
 
     try {
-      return await fetch(url, {
+      return await this.fetchFn(url, {
         headers: {
           accept: "application/json"
         },
         signal: controller.signal
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw error;
-      }
-
-      throw upstreamError("Could not connect to Rick and Morty API", {
-        url: url.toString(),
-        cause: error instanceof Error ? error.message : String(error)
       });
     } finally {
       clearTimeout(timeout);

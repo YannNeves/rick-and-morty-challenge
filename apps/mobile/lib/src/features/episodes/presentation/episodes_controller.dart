@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../analytics/analytics_tracker.dart';
@@ -27,14 +29,16 @@ class EpisodesController extends ChangeNotifier {
     try {
       page = await _episodeRepository.getEpisodes(page: pageNumber);
       status = LoadStatus.success;
-      await _analyticsTracker.track(
-        'episode_list_viewed',
-        properties: {'page': pageNumber},
+      notifyListeners();
+      unawaited(
+        _analyticsTracker.track(
+          'episode_list_viewed',
+          properties: {'page': pageNumber},
+        ),
       );
     } catch (error) {
       status = LoadStatus.failure;
       errorMessage = 'Não foi possível carregar os episódios.';
-    } finally {
       notifyListeners();
     }
   }

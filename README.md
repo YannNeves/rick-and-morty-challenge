@@ -4,7 +4,6 @@ Monorepo do desafio tecnico com separacao entre backend e cliente Flutter.
 
 - `apps/api`: API Node.js + TypeScript + Express.
 - `apps/mobile`: Flutter para Web, iOS e Android, pinado com FVM.
-- `archive/js-challenge`: arquivo legado do desafio JavaScript anterior.
 
 ## Diferenciais implementados
 
@@ -15,10 +14,12 @@ Monorepo do desafio tecnico com separacao entre backend e cliente Flutter.
 - Analytics desacoplado no app, enviado para a propria API sem depender de conta externa.
 - Dockerfile, Docker Compose, healthcheck e `.env.example`.
 - Testes unitarios e de integracao na API, testes de dominio/controller/widget no Flutter.
-- CI com GitHub Actions.
+- CI com testes, imagem Docker e builds Flutter Web, Android e iOS.
 - OpenAPI em `docs/openapi.yaml`.
 
 ## Como rodar a API
+
+Requer Node.js `24.20.0`.
 
 ```bash
 npm --prefix apps/api install
@@ -41,6 +42,8 @@ docker compose up --build
 ```
 
 ## Como rodar o Flutter
+
+O SDK Flutter `3.47.2` e gerenciado pelo FVM. O build Android usa JDK 17.
 
 ```bash
 fvm use
