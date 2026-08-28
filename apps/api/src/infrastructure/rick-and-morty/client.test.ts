@@ -209,6 +209,22 @@ test("client maps a missing character to not found", async () => {
   );
 });
 
+test("client gets a location and maps missing locations to not found", async () => {
+  let status = 200;
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => status === 404
+      ? jsonResponse({ error: "not found" }, 404)
+      : jsonResponse({ id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residents: [], url: "", created: "" })
+  });
+
+  assert.equal((await client.getLocation(3)).name, "Citadel of Ricks");
+  status = 404;
+  await assert.rejects(client.getLocation(999), (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND");
+});
+
 test("client normalizes single and multiple character responses", async () => {
   const responseBody = {
     id: 1,

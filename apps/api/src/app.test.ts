@@ -21,7 +21,7 @@ import type {
   EpisodePage
 } from "./modules/episodes/domain/episode.models.js";
 import type { LocationsGateway } from "./modules/locations/application/locations.gateway.js";
-import type { LocationListFilters, LocationPage } from "./modules/locations/domain/location.models.js";
+import type { Location, LocationListFilters, LocationPage } from "./modules/locations/domain/location.models.js";
 
 const testEnv: AppEnv = {
   nodeEnv: "test",
@@ -108,6 +108,10 @@ class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharacte
       locations: [{ id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1, residentIds: [1] }]
     };
   }
+
+  async getLocation(): Promise<Location> {
+    return { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1, residentIds: [1] };
+  }
 }
 
 const withServer = async <T>(callback: (baseUrl: string) => Promise<T>): Promise<T> => {
@@ -170,6 +174,24 @@ test("GET /api/v1/locations returns a mapped location page", async () => {
     assert.equal(response.status, 200);
     assert.equal(body.totalItems, 1);
     assert.deepEqual(body.locations[0], { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1 });
+  });
+});
+
+test("GET /api/v1/locations/:id returns sorted residents", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/locations/3`);
+    const body = (await response.json()) as { name: string; residents: CharacterSummary[] };
+
+    assert.equal(response.status, 200);
+    assert.equal(body.name, "Citadel of Ricks");
+    assert.deepEqual(body.residents.map((resident) => resident.name), ["Rick Sanchez"]);
+  });
+});
+
+test("GET /api/v1/locations/:id rejects invalid ids", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/locations/zero`);
+    assert.equal(response.status, 400);
   });
 });
 

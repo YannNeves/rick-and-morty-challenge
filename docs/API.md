@@ -55,6 +55,14 @@ Query params:
 curl "http://localhost:3000/api/v1/locations?page=1&name=citadel"
 ```
 
+## `GET /locations/:id`
+
+Retorna a localizacao e seus residentes mapeados, ordenados por nome.
+
+```bash
+curl "http://localhost:3000/api/v1/locations/3"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.

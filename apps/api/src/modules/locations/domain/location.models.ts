@@ -29,3 +29,9 @@ export type LocationPage = {
 export type LocationListResult = Omit<LocationPage, "locations"> & {
   locations: LocationSummary[];
 };
+
+import type { CharacterSummary } from "../../characters/domain/character.models.js";
+
+export type LocationDetails = LocationSummary & {
+  residents: CharacterSummary[];
+};
