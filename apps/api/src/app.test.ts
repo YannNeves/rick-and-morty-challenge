@@ -4,14 +4,22 @@ import test from "node:test";
 
 import { createApp } from "./app.js";
 import type { AppEnv } from "./config/env.js";
+import type { CharactersGateway } from "./modules/characters/application/characters.gateway.js";
 import type {
+  CharacterDetails,
   CharacterListFilters,
+  CharacterListResult,
+  CharacterSummary
+} from "./modules/characters/domain/character.models.js";
+import type {
+  EpisodeCharactersGateway,
+  EpisodesGateway
+} from "./modules/episodes/application/episodes.gateway.js";
+import type {
+  Episode,
   EpisodeListFilters,
-  RickAndMortyCharacter,
-  RickAndMortyEpisode,
-  RickAndMortyGateway,
-  RickAndMortyPage
-} from "./integrations/rick-and-morty/types.js";
+  EpisodePage
+} from "./modules/episodes/domain/episode.models.js";
 
 const testEnv: AppEnv = {
   nodeEnv: "test",
@@ -22,71 +30,70 @@ const testEnv: AppEnv = {
   allowedOrigins: ["*"]
 };
 
-const episode: RickAndMortyEpisode = {
+const episode: Episode = {
   id: 1,
   name: "Pilot",
-  air_date: "December 2, 2013",
-  episode: "S01E01",
-  characters: ["https://rickandmortyapi.com/api/character/1"],
-  url: "https://rickandmortyapi.com/api/episode/1",
-  created: "2017-11-10T12:56:33.798Z"
+  airDate: "December 2, 2013",
+  code: "S01E01",
+  characterCount: 1,
+  characterIds: [1]
 };
 
-class FakeGateway implements RickAndMortyGateway {
+const character: CharacterSummary = {
+  id: 1,
+  name: "Rick Sanchez",
+  status: "Alive",
+  species: "Human",
+  type: "",
+  gender: "Male",
+  origin: "Earth",
+  location: "Earth",
+  image: "",
+  episodeCount: 1
+};
+
+class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharactersGateway {
   async listCharacters(
-    _filters: CharacterListFilters
-  ): Promise<RickAndMortyPage<RickAndMortyCharacter>> {
+    filters: CharacterListFilters
+  ): Promise<CharacterListResult> {
     return {
-      info: { count: 1, pages: 1, next: null, prev: null },
-      results: [await this.getCharacters().then((items) => items[0]!)]
+      page: filters.page,
+      totalPages: 1,
+      totalItems: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      characters: [character]
     };
   }
 
-  async getCharacter(): Promise<RickAndMortyCharacter> {
-    return (await this.getCharacters())[0]!;
+  async getCharacter(): Promise<CharacterDetails> {
+    return {
+      ...character,
+      origin: { id: null, name: "Earth" },
+      location: { id: null, name: "Earth" },
+      episodeIds: []
+    };
   }
 
   async listEpisodes(
     _filters: EpisodeListFilters
-  ): Promise<RickAndMortyPage<RickAndMortyEpisode>> {
+  ): Promise<EpisodePage> {
     return {
-      info: {
-        count: 1,
-        pages: 1,
-        next: null,
-        prev: null
-      },
-      results: [episode]
+      page: _filters.page,
+      totalPages: 1,
+      totalItems: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      episodes: [episode]
     };
   }
 
-  async getEpisode(): Promise<RickAndMortyEpisode> {
+  async getEpisode(): Promise<Episode> {
     return episode;
   }
 
-  async getCharacters(): Promise<RickAndMortyCharacter[]> {
-    return [
-      {
-        id: 1,
-        name: "Rick Sanchez",
-        status: "Alive",
-        species: "Human",
-        type: "",
-        gender: "Male",
-        origin: {
-          name: "Earth",
-          url: ""
-        },
-        location: {
-          name: "Earth",
-          url: ""
-        },
-        image: "",
-        episode: ["episode"],
-        url: "",
-        created: ""
-      }
-    ];
+  async getCharacters(): Promise<CharacterSummary[]> {
+    return [character];
   }
 }
 
@@ -101,9 +108,11 @@ const withServer = async <T>(callback: (baseUrl: string) => Promise<T>): Promise
     const { port } = server.address() as AddressInfo;
     return await callback(`http://127.0.0.1:${port}`);
   } finally {
-    await new Promise<void>((resolve, reject) => {
-      server.close((error) => (error ? reject(error) : resolve()));
-    });
+    if (server.listening) {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
   }
 };
 

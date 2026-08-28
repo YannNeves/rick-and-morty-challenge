@@ -31,4 +31,3 @@ fvm flutter build ios --simulator --no-codesign
 ## Configuracoes
 
 - `API_BASE_URL`: base da API Node. Padrao Web/iOS: `http://localhost:3000/api/v1`; Android emulator: `http://10.0.2.2:3000/api/v1`.
-- `ANALYTICS_ENABLED`: `true` por padrao. Use `false` para desabilitar envio de eventos.

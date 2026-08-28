@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../analytics/analytics_tracker.dart';
 import '../data/episode_repository.dart';
 import '../domain/episode_models.dart';
 import 'episode_details_page.dart';
@@ -9,14 +8,9 @@ import 'load_status.dart';
 import 'widgets/empty_error_state.dart';
 
 class EpisodesPage extends StatefulWidget {
-  const EpisodesPage({
-    required this.episodeRepository,
-    required this.analyticsTracker,
-    super.key,
-  });
+  const EpisodesPage({required this.episodeRepository, super.key});
 
   final EpisodeRepository episodeRepository;
-  final AnalyticsTracker analyticsTracker;
 
   @override
   State<EpisodesPage> createState() => _EpisodesPageState();
@@ -30,10 +24,8 @@ class _EpisodesPageState extends State<EpisodesPage> {
     super.initState();
     _controller = EpisodesController(
       episodeRepository: widget.episodeRepository,
-      analyticsTracker: widget.analyticsTracker,
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.analyticsTracker.track('app_opened');
       _controller.load();
     });
   }
@@ -125,7 +117,6 @@ class _EpisodesPageState extends State<EpisodesPage> {
             (_) => EpisodeDetailsPage(
               episode: episode,
               episodeRepository: widget.episodeRepository,
-              analyticsTracker: widget.analyticsTracker,
             ),
       ),
     );

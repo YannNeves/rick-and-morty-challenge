@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rick_and_morty_challenge/src/app/app.dart';
-import 'package:rick_and_morty_challenge/src/features/analytics/analytics_tracker.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/data/episode_repository.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/domain/character_sort.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/domain/episode_models.dart';
@@ -8,10 +7,7 @@ import 'package:rick_and_morty_challenge/src/features/episodes/domain/episode_mo
 void main() {
   testWidgets('shows episodes and opens character details', (tester) async {
     await tester.pumpWidget(
-      RickAndMortyApp(
-        episodeRepository: FakeEpisodeRepository(),
-        analyticsTracker: const NoopAnalyticsTracker(),
-      ),
+      RickAndMortyApp(episodeRepository: FakeEpisodeRepository()),
     );
 
     await tester.pumpAndSettle();

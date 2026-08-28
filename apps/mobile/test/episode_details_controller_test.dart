@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rick_and_morty_challenge/src/features/analytics/analytics_tracker.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/data/episode_repository.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/domain/character_sort.dart';
 import 'package:rick_and_morty_challenge/src/features/episodes/domain/episode_models.dart';
@@ -9,19 +6,16 @@ import 'package:rick_and_morty_challenge/src/features/episodes/presentation/epis
 import 'package:rick_and_morty_challenge/src/features/episodes/presentation/load_status.dart';
 
 void main() {
-  test('EpisodeDetailsController does not wait for analytics', () async {
-    final analytics = PendingAnalyticsTracker();
+  test('EpisodeDetailsController loads episode characters', () async {
     final controller = EpisodeDetailsController(
       episodeId: 1,
       episodeRepository: FakeEpisodeRepository(),
-      analyticsTracker: analytics,
     );
 
-    await controller.load().timeout(const Duration(milliseconds: 100));
+    await controller.load();
 
     expect(controller.status, LoadStatus.success);
     expect(controller.details?.characters.single.name, 'Rick Sanchez');
-    analytics.complete();
   });
 }
 
@@ -57,16 +51,4 @@ class FakeEpisodeRepository implements EpisodeRepository {
       ],
     );
   }
-}
-
-class PendingAnalyticsTracker implements AnalyticsTracker {
-  final _completer = Completer<void>();
-
-  @override
-  Future<void> track(
-    String name, {
-    Map<String, Object?> properties = const {},
-  }) => _completer.future;
-
-  void complete() => _completer.complete();
 }

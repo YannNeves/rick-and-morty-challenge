@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
-import '../../analytics/analytics_tracker.dart';
 import '../data/episode_repository.dart';
 import '../domain/character_sort.dart';
 import '../domain/episode_models.dart';
@@ -12,14 +9,11 @@ class EpisodeDetailsController extends ChangeNotifier {
   EpisodeDetailsController({
     required int episodeId,
     required EpisodeRepository episodeRepository,
-    required AnalyticsTracker analyticsTracker,
   }) : _episodeId = episodeId,
-       _episodeRepository = episodeRepository,
-       _analyticsTracker = analyticsTracker;
+       _episodeRepository = episodeRepository;
 
   final int _episodeId;
   final EpisodeRepository _episodeRepository;
-  final AnalyticsTracker _analyticsTracker;
 
   LoadStatus status = LoadStatus.idle;
   EpisodeDetails? details;
@@ -38,12 +32,6 @@ class EpisodeDetailsController extends ChangeNotifier {
       );
       status = LoadStatus.success;
       notifyListeners();
-      unawaited(
-        _analyticsTracker.track(
-          'episode_details_viewed',
-          properties: {'episodeId': _episodeId, 'sortBy': sortBy.apiValue},
-        ),
-      );
     } catch (error) {
       status = LoadStatus.failure;
       errorMessage = 'Não foi possível carregar os personagens.';
@@ -57,12 +45,6 @@ class EpisodeDetailsController extends ChangeNotifier {
     }
 
     sortBy = value;
-    unawaited(
-      _analyticsTracker.track(
-        'character_sort_changed',
-        properties: {'episodeId': _episodeId, 'sortBy': value.apiValue},
-      ),
-    );
     await load();
   }
 }
