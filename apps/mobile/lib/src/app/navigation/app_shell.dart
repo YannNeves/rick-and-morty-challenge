@@ -7,6 +7,7 @@ import 'widgets/app_header.dart';
 import 'widgets/app_search_bar.dart';
 import 'widgets/animated_bottom_navigation.dart';
 import '../../features/characters/data/character_repository.dart';
+import '../../features/characters/presentation/characters_page.dart';
 import '../../features/episodes/data/episode_repository.dart';
 import '../../features/episodes/presentation/episodes_page.dart';
 import '../../features/home/ui/views/home_view.dart';
@@ -79,6 +80,13 @@ class AppShell extends StatelessWidget {
     if (destination == AppDestination.episodes) {
       return EpisodesPage(
         episodeRepository: episodeRepository,
+        searchQuery: viewModel.searchQuery,
+      );
+    }
+
+    if (destination == AppDestination.characters) {
+      return CharactersPage(
+        characterRepository: characterRepository,
         searchQuery: viewModel.searchQuery,
       );
     }
