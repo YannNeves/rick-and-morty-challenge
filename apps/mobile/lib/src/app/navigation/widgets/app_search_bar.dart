@@ -5,11 +5,13 @@ import '../../theme/app_colors.dart';
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
     required this.initialValue,
+    required this.hintText,
     required this.onChanged,
     super.key,
   });
 
   final String initialValue;
+  final String hintText;
   final ValueChanged<String> onChanged;
 
   @override
@@ -28,8 +30,8 @@ class AppSearchBar extends StatelessWidget {
         minLines: 1,
         style: Theme.of(context).textTheme.titleMedium,
         decoration: InputDecoration(
-          hintText: 'Personagem, episódio,\nlocalização...',
-          hintMaxLines: 2,
+          hintText: hintText,
+          hintMaxLines: 1,
           contentPadding: const EdgeInsets.fromLTRB(20, 10, 12, 10),
           suffixIcon: Icon(
             Icons.search,
