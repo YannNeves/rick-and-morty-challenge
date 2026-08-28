@@ -6,13 +6,14 @@ import type {
   EpisodeCharactersGateway,
   EpisodesGateway
 } from "./modules/episodes/application/episodes.gateway.js";
+import type { LocationsGateway } from "./modules/locations/application/locations.gateway.js";
 import { cors, securityHeaders } from "./presentation/http/middleware/security.js";
 import { errorHandler, notFoundHandler } from "./presentation/http/middleware/error-handler.js";
 import { createApiRouter } from "./presentation/http/api.routes.js";
 
 export const createApp = (
   env: AppEnv,
-  gateway: CharactersGateway & EpisodesGateway & EpisodeCharactersGateway
+  gateway: CharactersGateway & EpisodesGateway & EpisodeCharactersGateway & LocationsGateway
 ) => {
   const app = express();
 

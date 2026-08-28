@@ -20,6 +20,8 @@ import type {
   EpisodeListFilters,
   EpisodePage
 } from "./modules/episodes/domain/episode.models.js";
+import type { LocationsGateway } from "./modules/locations/application/locations.gateway.js";
+import type { LocationListFilters, LocationPage } from "./modules/locations/domain/location.models.js";
 
 const testEnv: AppEnv = {
   nodeEnv: "test",
@@ -52,7 +54,7 @@ const character: CharacterSummary = {
   episodeCount: 1
 };
 
-class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharactersGateway {
+class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharactersGateway, LocationsGateway {
   async listCharacters(
     filters: CharacterListFilters
   ): Promise<CharacterListResult> {
@@ -94,6 +96,17 @@ class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharacte
 
   async getCharacters(): Promise<CharacterSummary[]> {
     return [character];
+  }
+
+  async listLocations(filters: LocationListFilters): Promise<LocationPage> {
+    return {
+      page: filters.page,
+      totalPages: 1,
+      totalItems: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      locations: [{ id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1, residentIds: [1] }]
+    };
   }
 }
 
@@ -146,6 +159,17 @@ test("GET /api/v1/episodes/:id rejects invalid ids", async () => {
 
     assert.equal(response.status, 400);
     assert.equal(body.error.code, "BAD_REQUEST");
+  });
+});
+
+test("GET /api/v1/locations returns a mapped location page", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/locations?name=citadel&type=station&dimension=unknown`);
+    const body = (await response.json()) as { totalItems: number; locations: Array<{ name: string; residentCount: number }> };
+
+    assert.equal(response.status, 200);
+    assert.equal(body.totalItems, 1);
+    assert.deepEqual(body.locations[0], { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1 });
   });
 });
 
