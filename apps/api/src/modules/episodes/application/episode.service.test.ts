@@ -14,6 +14,7 @@ class FakeGateway implements EpisodesGateway, EpisodeCharactersGateway {
     return { page: filters.page, totalPages: 1, totalItems: 1, hasNextPage: false, hasPreviousPage: filters.page > 1, episodes: [episode] };
   }
   async getEpisode(): Promise<Episode> { return episode; }
+  async getEpisodes(): Promise<Episode[]> { return [{ ...episode, id: 10 }, episode]; }
   async getCharacters(ids: number[]): Promise<CharacterSummary[]> {
     this.requestedCharacterIds = ids;
     return [character(2, "Morty Smith"), character(1, "Rick Sanchez")];
@@ -32,4 +33,19 @@ test("getEpisodeDetails fetches characters in batch and sorts them by name", asy
   const result = await new EpisodeService(gateway, gateway).getEpisodeDetails(28);
   assert.deepEqual(gateway.requestedCharacterIds, [2, 1]);
   assert.deepEqual(result.characters.map((item) => item.name), ["Morty Smith", "Rick Sanchez"]);
+});
+
+test("getEpisodesBatch deduplicates ids, preserves order and hides character ids", async () => {
+  const gateway = new FakeGateway();
+  const result = await new EpisodeService(gateway, gateway).getEpisodesBatch([28, 10, 28]);
+  assert.deepEqual(result.map((item) => item.id), [28, 10]);
+  assert.equal("characterIds" in (result[0] ?? {}), false);
+});
+
+test("getEpisodesBatch rejects empty, invalid and oversized lists", async () => {
+  const gateway = new FakeGateway();
+  const service = new EpisodeService(gateway, gateway);
+  await assert.rejects(service.getEpisodesBatch([]));
+  await assert.rejects(service.getEpisodesBatch([0]));
+  await assert.rejects(service.getEpisodesBatch(Array.from({ length: 101 }, (_, index) => index + 1)));
 });

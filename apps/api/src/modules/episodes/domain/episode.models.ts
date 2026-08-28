@@ -42,3 +42,5 @@ export type EpisodeListResult = {
 
 export type CharacterSortField = "name" | "id" | "status" | "species";
 export type SortOrder = "asc" | "desc";
+
+export const EPISODE_BATCH_LIMIT = 100;

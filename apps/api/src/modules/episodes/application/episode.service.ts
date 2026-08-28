@@ -1,10 +1,12 @@
 import { badRequest } from "../../../shared/errors/app-error.js";
 import { sortCharacters } from "../domain/character-sorter.js";
+import { EPISODE_BATCH_LIMIT } from "../domain/episode.models.js";
 import type {
   CharacterSortField,
   EpisodeDetails,
   EpisodeListFilters,
   EpisodeListResult,
+  EpisodeSummary,
   SortOrder
 } from "../domain/episode.models.js";
 import type {
@@ -52,5 +54,21 @@ export class EpisodeService {
         options.characterOrder ?? "asc"
       )
     };
+  }
+
+  async getEpisodesBatch(ids: number[]): Promise<EpisodeSummary[]> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0 || uniqueIds.length > EPISODE_BATCH_LIMIT || uniqueIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+      throw badRequest("Episode ids are invalid", { maxItems: EPISODE_BATCH_LIMIT });
+    }
+
+    const episodes = await this.episodesGateway.getEpisodes(uniqueIds);
+    const byId = new Map(episodes.map((episode) => [episode.id, episode]));
+    return uniqueIds.flatMap((id) => {
+      const episode = byId.get(id);
+      if (!episode) return [];
+      const { characterIds: _characterIds, ...summary } = episode;
+      return [summary];
+    });
   }
 }

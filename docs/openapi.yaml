@@ -154,6 +154,21 @@ paths:
       responses:
         "200":
           description: Episode page
+  /episodes/batch:
+    get:
+      summary: Get multiple episodes
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "10,28"
+      responses:
+        "200":
+          description: Ordered episode summary collection
+        "400":
+          description: Invalid or oversized id list
   /episodes/{id}:
     get:
       summary: Get episode details with sorted characters

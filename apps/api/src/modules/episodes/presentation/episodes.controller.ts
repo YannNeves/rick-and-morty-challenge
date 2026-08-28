@@ -2,11 +2,13 @@ import type { Request, Response } from "express";
 
 import type { EpisodeService } from "../application/episode.service.js";
 import {
+  parseIdList,
   parseCharacterSortField,
   parseOptionalString,
   parsePositiveInt,
   parseSortOrder
 } from "../../../presentation/http/query-parsers.js";
+import { EPISODE_BATCH_LIMIT } from "../domain/episode.models.js";
 
 export class EpisodesController {
   constructor(private readonly episodeService: EpisodeService) {}
@@ -34,5 +36,10 @@ export class EpisodesController {
     });
 
     res.json(result);
+  };
+
+  batch = async (req: Request, res: Response): Promise<void> => {
+    const ids = parseIdList(req.query.ids, "ids", EPISODE_BATCH_LIMIT);
+    res.json({ episodes: await this.episodeService.getEpisodesBatch(ids) });
   };
 }

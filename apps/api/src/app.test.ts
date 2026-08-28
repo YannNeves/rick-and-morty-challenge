@@ -94,6 +94,10 @@ class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharacte
     return episode;
   }
 
+  async getEpisodes(): Promise<Episode[]> {
+    return [{ ...episode, id: 28, name: "The Ricklantis Mixup", code: "S03E07" }, { ...episode, id: 10 }];
+  }
+
   async getCharacters(): Promise<CharacterSummary[]> {
     return [character];
   }
@@ -171,6 +175,20 @@ test("GET /api/v1/episodes/:id rejects invalid ids", async () => {
     assert.equal(response.status, 400);
     assert.equal(body.error.code, "BAD_REQUEST");
   });
+});
+
+test("GET /api/v1/episodes/batch returns deduplicated episode summaries", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/episodes/batch?ids=10,28,10`);
+    const body = (await response.json()) as { episodes: Array<{ id: number; characterIds?: number[] }> };
+    assert.equal(response.status, 200);
+    assert.deepEqual(body.episodes.map((item) => item.id), [10, 28]);
+    assert.equal(body.episodes[0]?.characterIds, undefined);
+  });
+});
+
+test("GET /api/v1/episodes/batch rejects invalid lists", async () => {
+  await withServer(async (baseUrl) => assert.equal((await fetch(`${baseUrl}/api/v1/episodes/batch?ids=10,zero`)).status, 400));
 });
 
 test("GET /api/v1/locations returns a mapped location page", async () => {

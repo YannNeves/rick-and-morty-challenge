@@ -68,6 +68,14 @@
       ]
     },
     {
+      "name": "Locations",
+      "item": [
+        {"name":"List and filter locations","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations?page=1&name=citadel&type=space%20station&dimension=unknown"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));"]}}]},
+        {"name":"Get location with sorted residents","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations/{{locationId}}"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));"]}}]},
+        {"name":"Get locations batch","request":{"method":"GET","header":[],"url":"{{apiBaseUrl}}/locations/batch?ids=3,21,3"},"event":[{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Preserves order', () => pm.expect(pm.response.json().locations.map(item => item.id)).to.eql([3, 21]));"]}}]}
+      ]
+    },
+    {
       "name": "Episodes",
       "item": [
         {
@@ -84,6 +92,11 @@
           "name": "Get episode with sorted characters",
           "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes/{{episodeId}}?sortCharactersBy=name&characterOrder=asc","description":"Os campos aceitos para ordenacao sao name, id, status e species; a ordem pode ser asc ou desc."},
           "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Characters are sorted by name', function () { const names = pm.response.json().characters.map(item => item.name); const sorted = [...names].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' })); pm.expect(names).to.eql(sorted); });"]}}]
+        },
+        {
+          "name": "Get episodes batch",
+          "request": {"method":"GET","header":[],"url":"{{apiBaseUrl}}/episodes/batch?ids=10,28,10"},
+          "event": [{"listen":"test","script":{"type":"text/javascript","exec":["pm.test('Status is 200', () => pm.response.to.have.status(200));","pm.test('Preserves order', () => pm.expect(pm.response.json().episodes.map(item => item.id)).to.eql([10, 28]));"]}}]
         },
         {
           "name": "Reject invalid sort field",

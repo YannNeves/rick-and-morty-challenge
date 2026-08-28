@@ -8,6 +8,7 @@ import type {
 export interface EpisodesGateway {
   listEpisodes(filters: EpisodeListFilters): Promise<EpisodePage>;
   getEpisode(id: number): Promise<Episode>;
+  getEpisodes(ids: number[]): Promise<Episode[]>;
 }
 
 export interface EpisodeCharactersGateway {

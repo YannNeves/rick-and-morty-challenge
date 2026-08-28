@@ -269,3 +269,11 @@ test("client normalizes single and multiple character responses", async () => {
     [1]
   );
 });
+
+test("client normalizes and caches single episode batch responses", async () => {
+  let calls = 0;
+  const client = new RickAndMortyHttpClient({ baseUrl: "https://example.com/api", timeoutMs: 100, cacheTtlMs: 1_000, fetchFn: async () => { calls += 1; return jsonResponse(episode); } });
+  assert.deepEqual((await client.getEpisodes([1])).map((item) => item.id), [1]);
+  await client.getEpisodes([1]);
+  assert.equal(calls, 1);
+});
