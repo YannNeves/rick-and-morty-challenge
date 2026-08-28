@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 class AppShellViewModel extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.dark;
   int _selectedIndex = 0;
+  String _searchQuery = '';
 
   ThemeMode get themeMode => _themeMode;
   int get selectedIndex => _selectedIndex;
+  String get searchQuery => _searchQuery;
 
   void selectDestination(int index) {
     if (_selectedIndex == index) return;
@@ -17,5 +19,9 @@ class AppShellViewModel extends ChangeNotifier {
     _themeMode =
         _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
+  }
+
+  void updateSearchQuery(String value) {
+    _searchQuery = value.trim();
   }
 }
