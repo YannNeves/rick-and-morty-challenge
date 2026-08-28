@@ -225,6 +225,23 @@ test("client gets a location and maps missing locations to not found", async () 
   await assert.rejects(client.getLocation(999), (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND");
 });
 
+test("client normalizes and caches single location batch responses", async () => {
+  let calls = 0;
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => {
+      calls += 1;
+      return jsonResponse({ id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residents: [], url: "", created: "" });
+    }
+  });
+
+  assert.deepEqual((await client.getLocations([3])).map((location) => location.id), [3]);
+  await client.getLocations([3]);
+  assert.equal(calls, 1);
+});
+
 test("client normalizes single and multiple character responses", async () => {
   const responseBody = {
     id: 1,

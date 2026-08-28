@@ -112,6 +112,13 @@ class FakeGateway implements CharactersGateway, EpisodesGateway, EpisodeCharacte
   async getLocation(): Promise<Location> {
     return { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 1, residentIds: [1] };
   }
+
+  async getLocations(): Promise<Location[]> {
+    return [
+      { id: 21, name: "Testicle Monster Dimension", type: "Dimension", dimension: "Testicle Monster Dimension", residentCount: 0, residentIds: [] },
+      await this.getLocation()
+    ];
+  }
 }
 
 const withServer = async <T>(callback: (baseUrl: string) => Promise<T>): Promise<T> => {
@@ -191,6 +198,22 @@ test("GET /api/v1/locations/:id returns sorted residents", async () => {
 test("GET /api/v1/locations/:id rejects invalid ids", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/locations/zero`);
+    assert.equal(response.status, 400);
+  });
+});
+
+test("GET /api/v1/locations/batch returns deduplicated locations", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/locations/batch?ids=3,21,3`);
+    const body = (await response.json()) as { locations: Array<{ id: number }> };
+    assert.equal(response.status, 200);
+    assert.deepEqual(body.locations.map((location) => location.id), [3, 21]);
+  });
+});
+
+test("GET /api/v1/locations/batch rejects invalid lists", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/locations/batch?ids=3,zero`);
     assert.equal(response.status, 400);
   });
 });

@@ -35,3 +35,5 @@ import type { CharacterSummary } from "../../characters/domain/character.models.
 export type LocationDetails = LocationSummary & {
   residents: CharacterSummary[];
 };
+
+export const LOCATION_BATCH_LIMIT = 100;

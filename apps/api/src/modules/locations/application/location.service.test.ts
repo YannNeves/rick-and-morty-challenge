@@ -26,6 +26,13 @@ class FakeGateway implements LocationsGateway {
     return { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 2, residentIds: [2, 1] };
   }
 
+  async getLocations(): Promise<Location[]> {
+    return [
+      { id: 21, name: "Testicle Monster Dimension", type: "Dimension", dimension: "Testicle Monster Dimension", residentCount: 0, residentIds: [] },
+      { id: 3, name: "Citadel of Ricks", type: "Space station", dimension: "unknown", residentCount: 2, residentIds: [2, 1] }
+    ];
+  }
+
   async getCharacters(ids: number[]): Promise<CharacterSummary[]> {
     return ids.map((id) => ({ id, name: id === 1 ? "Rick Sanchez" : "Morty Smith", status: "Alive", species: "Human", type: "", gender: "Male", image: "", origin: "Earth", location: "Citadel", episodeCount: 1 }));
   }
@@ -61,4 +68,18 @@ test("getLocationDetails supports empty locations", async () => {
 test("getLocationDetails rejects invalid ids", async () => {
   const gateway = new FakeGateway();
   await assert.rejects(new LocationService(gateway, gateway).getLocationDetails(0), AppError);
+});
+
+test("getLocationsBatch deduplicates ids and preserves requested order", async () => {
+  const gateway = new FakeGateway();
+  const result = await new LocationService(gateway, gateway).getLocationsBatch([3, 21, 3]);
+  assert.deepEqual(result.map((location) => location.id), [3, 21]);
+});
+
+test("getLocationsBatch rejects empty, invalid and oversized lists", async () => {
+  const gateway = new FakeGateway();
+  const service = new LocationService(gateway, gateway);
+  await assert.rejects(service.getLocationsBatch([]), AppError);
+  await assert.rejects(service.getLocationsBatch([0]), AppError);
+  await assert.rejects(service.getLocationsBatch(Array.from({ length: 101 }, (_, index) => index + 1)), AppError);
 });

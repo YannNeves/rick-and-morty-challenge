@@ -8,6 +8,7 @@ import type { CharacterSummary } from "../../characters/domain/character.models.
 export interface LocationsGateway {
   listLocations(filters: LocationListFilters): Promise<LocationPage>;
   getLocation(id: number): Promise<Location>;
+  getLocations(ids: number[]): Promise<Location[]>;
 }
 
 export interface LocationCharactersGateway {

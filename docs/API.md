@@ -63,6 +63,14 @@ Retorna a localizacao e seus residentes mapeados, ordenados por nome.
 curl "http://localhost:3000/api/v1/locations/3"
 ```
 
+## `GET /locations/batch`
+
+Retorna ate 100 localizacoes, removendo duplicidades e preservando a ordem dos IDs.
+
+```bash
+curl "http://localhost:3000/api/v1/locations/batch?ids=3,21"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.

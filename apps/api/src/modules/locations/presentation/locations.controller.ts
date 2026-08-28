@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 
-import { parseOptionalString, parsePositiveInt } from "../../../presentation/http/query-parsers.js";
+import { parseIdList, parseOptionalString, parsePositiveInt } from "../../../presentation/http/query-parsers.js";
 import type { LocationService } from "../application/location.service.js";
+import { LOCATION_BATCH_LIMIT } from "../domain/location.models.js";
 
 export class LocationsController {
   constructor(private readonly service: LocationService) {}
@@ -23,5 +24,10 @@ export class LocationsController {
   details = async (req: Request, res: Response): Promise<void> => {
     const id = parsePositiveInt(req.params.id, "id");
     res.json(await this.service.getLocationDetails(id));
+  };
+
+  batch = async (req: Request, res: Response): Promise<void> => {
+    const ids = parseIdList(req.query.ids, "ids", LOCATION_BATCH_LIMIT);
+    res.json({ locations: await this.service.getLocationsBatch(ids) });
   };
 }
