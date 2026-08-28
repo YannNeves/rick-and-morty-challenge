@@ -2,6 +2,9 @@
 
 Cliente Flutter do desafio.
 
+SDK fixado pelo FVM: Flutter `3.47.2`.
+O build Android requer JDK 17.
+
 Suporta:
 
 - Web;
@@ -20,6 +23,9 @@ fvm flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000/api/v
 ```bash
 fvm flutter analyze
 fvm flutter test
+fvm flutter build web
+fvm flutter build apk --debug
+fvm flutter build ios --simulator --no-codesign
 ```
 
 ## Configuracoes
