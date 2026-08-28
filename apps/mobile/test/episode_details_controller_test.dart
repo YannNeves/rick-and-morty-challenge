@@ -21,6 +21,10 @@ void main() {
 
 class FakeEpisodeRepository implements EpisodeRepository {
   @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async =>
+      throw UnimplementedError();
+
+  @override
   Future<List<EpisodeSummary>> getAllEpisodes() async {
     throw UnimplementedError();
   }

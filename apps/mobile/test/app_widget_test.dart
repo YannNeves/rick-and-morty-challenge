@@ -152,6 +152,19 @@ void main() {
 
     expect(find.text('Rick Sanchez'), findsOneWidget);
 
+    await tester.tap(find.text('Rick Sanchez'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('character-details-page')),
+      findsOneWidget,
+    );
+    expect(find.text('Localizações'), findsOneWidget);
+    expect(find.text('Episódios'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
     await tester.enterText(
       find.byKey(const ValueKey('global-search-field')),
       'Morty',
@@ -190,6 +203,23 @@ void main() {
 
 class FakeCharacterRepository implements CharacterRepository {
   @override
+  Future<CharacterDetails> getCharacterDetails(int id) async {
+    return const CharacterDetails(
+      id: 1,
+      name: 'Rick Sanchez',
+      status: 'Alive',
+      species: 'Human',
+      type: '',
+      gender: 'Male',
+      image: 'https://example.com/rick.png',
+      origin: CharacterReference(id: 1, name: 'Earth (C-137)'),
+      location: CharacterReference(id: 1, name: 'Earth (C-137)'),
+      episodeCount: 2,
+      episodeIds: [1, 2],
+    );
+  }
+
+  @override
   Future<List<CharacterSummary>> getAllCharacters() async {
     return (await getCharacters()).characters;
   }
@@ -221,6 +251,11 @@ class FakeCharacterRepository implements CharacterRepository {
 }
 
 class FakeLocationRepository implements LocationRepository {
+  @override
+  Future<List<LocationSummary>> getLocationsBatch(List<int> ids) async {
+    return (await getLocations()).locations;
+  }
+
   @override
   Future<List<LocationSummary>> getAllLocations() async {
     return (await getLocations()).locations;
@@ -273,6 +308,11 @@ class FakeLocationRepository implements LocationRepository {
 }
 
 class FakeEpisodeRepository implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async {
+    return (await getEpisodes()).episodes;
+  }
+
   @override
   Future<List<EpisodeSummary>> getAllEpisodes() async {
     return (await getEpisodes()).episodes;

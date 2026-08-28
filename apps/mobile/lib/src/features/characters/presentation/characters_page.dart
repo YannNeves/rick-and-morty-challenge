@@ -2,19 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../episodes/data/episode_repository.dart';
 import '../../episodes/presentation/widgets/empty_error_state.dart';
+import '../../locations/data/location_repository.dart';
 import '../data/character_repository.dart';
 import '../domain/character_models.dart';
+import 'character_details_page.dart';
 import 'characters_controller.dart';
 
 class CharactersPage extends StatefulWidget {
   const CharactersPage({
     required this.characterRepository,
+    required this.episodeRepository,
+    required this.locationRepository,
     required this.searchQuery,
     super.key,
   });
 
   final CharacterRepository characterRepository;
+  final EpisodeRepository episodeRepository;
+  final LocationRepository locationRepository;
   final String searchQuery;
 
   @override
@@ -95,11 +102,29 @@ class _CharactersPageState extends State<CharactersPage> {
                 return _CharactersHeader(count: filteredCharacters.length);
               }
               if (filteredCharacters.isEmpty) return const _NoSearchResults();
-              return _CharacterCard(character: filteredCharacters[index - 1]);
+              final character = filteredCharacters[index - 1];
+              return _CharacterCard(
+                character: character,
+                onTap: () => _openCharacter(character),
+              );
             },
           ),
         );
       },
+    );
+  }
+
+  void _openCharacter(CharacterSummary character) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => CharacterDetailsPage(
+              character: character,
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
+              locationRepository: widget.locationRepository,
+            ),
+      ),
     );
   }
 }
@@ -131,75 +156,79 @@ class _CharactersHeader extends StatelessWidget {
 }
 
 class _CharacterCard extends StatelessWidget {
-  const _CharacterCard({required this.character});
+  const _CharacterCard({required this.character, required this.onTap});
 
   final CharacterSummary character;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final foreground = isDark ? AppColors.white : AppColors.darkGray;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkGray : AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: AspectRatio(
-                aspectRatio: 1.6,
-                child: Image.network(
-                  character.image,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, _, _) => ColoredBox(
-                        color: isDark ? AppColors.black : AppColors.white,
-                        child: const Center(
-                          child: Icon(Icons.person_outline, size: 64),
+    return GestureDetector(
+      onTap: onTap,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkGray : AppColors.lightSurface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: AspectRatio(
+                  aspectRatio: 1.6,
+                  child: Image.network(
+                    character.image,
+                    fit: BoxFit.cover,
+                    errorBuilder:
+                        (_, _, _) => ColoredBox(
+                          color: isDark ? AppColors.black : AppColors.white,
+                          child: const Center(
+                            child: Icon(Icons.person_outline, size: 64),
+                          ),
                         ),
-                      ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    character.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
                   ),
                 ),
-                const Icon(Icons.favorite, color: AppColors.blue, size: 36),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _Attribute(
-              icon: Icons.monitor_heart_outlined,
-              color: const Color(0xFFA8D900),
-              text: _statusLabel(character.status),
-            ),
-            _Attribute(
-              asset: 'assets/branding/character.svg',
-              color: foreground,
-              text: _speciesLabel(character.species),
-            ),
-            _Attribute(
-              asset: 'assets/branding/planet.svg',
-              color: foreground,
-              text: character.origin,
-            ),
-          ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      character.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.favorite, color: AppColors.blue, size: 36),
+                ],
+              ),
+              const SizedBox(height: 8),
+              _Attribute(
+                icon: Icons.monitor_heart_outlined,
+                color: const Color(0xFFA8D900),
+                text: _statusLabel(character.status),
+              ),
+              _Attribute(
+                asset: 'assets/branding/character.svg',
+                color: foreground,
+                text: _speciesLabel(character.species),
+              ),
+              _Attribute(
+                asset: 'assets/branding/planet.svg',
+                color: foreground,
+                text: character.origin,
+              ),
+            ],
+          ),
         ),
       ),
     );

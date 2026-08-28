@@ -64,6 +64,10 @@ void main() {
 
 class _CharacterRepositoryStub implements CharacterRepository {
   @override
+  Future<CharacterDetails> getCharacterDetails(int id) async =>
+      throw UnimplementedError();
+
+  @override
   Future<List<CharacterSummary>> getAllCharacters() async {
     throw UnimplementedError();
   }
@@ -98,6 +102,10 @@ class _CharacterRepositoryStub implements CharacterRepository {
 }
 
 class _EpisodeRepositoryStub implements EpisodeRepository {
+  @override
+  Future<List<EpisodeSummary>> getEpisodesBatch(List<int> ids) async =>
+      throw UnimplementedError();
+
   @override
   Future<List<EpisodeSummary>> getAllEpisodes() async {
     throw UnimplementedError();
@@ -150,6 +158,10 @@ class _EpisodeRepositoryStub implements EpisodeRepository {
 }
 
 class _LocationRepositoryStub implements LocationRepository {
+  @override
+  Future<List<LocationSummary>> getLocationsBatch(List<int> ids) async =>
+      throw UnimplementedError();
+
   @override
   Future<List<LocationSummary>> getAllLocations() async {
     throw UnimplementedError();

@@ -10,6 +10,7 @@ class CharactersSection extends StatelessWidget {
     required this.characters,
     required this.onRetry,
     required this.onShowAll,
+    required this.onCharacterSelected,
     this.errorMessage,
     super.key,
   });
@@ -19,6 +20,7 @@ class CharactersSection extends StatelessWidget {
   final String? errorMessage;
   final VoidCallback onRetry;
   final VoidCallback onShowAll;
+  final ValueChanged<CharacterSummary> onCharacterSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +60,7 @@ class CharactersSection extends StatelessWidget {
                 species: character.species,
                 image: character.image,
                 origin: character.origin,
+                onTap: () => onCharacterSelected(character),
               );
             },
           ),

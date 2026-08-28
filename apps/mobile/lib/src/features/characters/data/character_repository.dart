@@ -4,6 +4,7 @@ import '../domain/character_models.dart';
 abstract interface class CharacterRepository {
   Future<CharacterListPage> getCharacters({int page = 1});
   Future<List<CharacterSummary>> getAllCharacters();
+  Future<CharacterDetails> getCharacterDetails(int id);
 }
 
 class RemoteCharacterRepository implements CharacterRepository {
@@ -30,5 +31,12 @@ class RemoteCharacterRepository implements CharacterRepository {
               CharacterSummary.fromJson(Map<String, dynamic>.from(item as Map)),
         )
         .toList(growable: false);
+  }
+
+  @override
+  Future<CharacterDetails> getCharacterDetails(int id) async {
+    return CharacterDetails.fromJson(
+      await _apiClient.getMap('/characters/$id'),
+    );
   }
 }
