@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../app/theme/app_colors.dart';
+import '../../../../core/ui/display_value.dart';
 
 class CharacterCard extends StatelessWidget {
   const CharacterCard({
@@ -88,7 +89,7 @@ class CharacterCard extends StatelessWidget {
               _CharacterAttribute(
                 asset: 'assets/branding/planet.svg',
                 iconColor: foreground,
-                label: origin,
+                label: displayValue(origin),
               ),
             ],
           ),
@@ -107,7 +108,7 @@ class CharacterCard extends StatelessWidget {
       .toLowerCase()) {
     'human' => 'Humano',
     'alien' => 'Alienígena',
-    _ => species,
+    _ => displayValue(species),
   };
 }
 

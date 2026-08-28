@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../core/ui/display_value.dart';
 import '../../episodes/data/episode_repository.dart';
 import '../../episodes/domain/episode_models.dart' hide CharacterSummary;
 import '../../episodes/presentation/episode_details_page.dart';
@@ -67,7 +68,12 @@ class _CharacterDetailsPageState extends State<CharacterDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.character.name.toUpperCase())),
+      appBar: AppBar(
+        title: Text(
+          widget.character.name.toUpperCase(),
+          style: const TextStyle(color: AppColors.blue),
+        ),
+      ),
       body: FutureBuilder<_DetailsData>(
         future: _data,
         builder: (context, snapshot) {
@@ -152,6 +158,8 @@ class _CharacterDetailsPageState extends State<CharacterDetailsPage> {
             (_) => LocationDetailsPage(
               location: location,
               locationRepository: widget.locationRepository,
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
             ),
       ),
     );
@@ -164,6 +172,8 @@ class _CharacterDetailsPageState extends State<CharacterDetailsPage> {
             (_) => EpisodeDetailsPage(
               episode: episode,
               episodeRepository: widget.episodeRepository,
+              characterRepository: widget.characterRepository,
+              locationRepository: widget.locationRepository,
             ),
       ),
     );
@@ -230,13 +240,12 @@ class _LocationCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          Text(location.name, maxLines: 1, overflow: TextOverflow.ellipsis),
           Text(
-            location.name,
+            displayValue(location.type),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.blue),
           ),
-          Text(location.type, maxLines: 1, overflow: TextOverflow.ellipsis),
           const Spacer(),
           FilledButton(onPressed: onTap, child: const Text('Saiba mais')),
         ],

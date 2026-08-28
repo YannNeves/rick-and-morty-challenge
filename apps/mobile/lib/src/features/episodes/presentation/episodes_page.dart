@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../characters/data/character_repository.dart';
+import '../../locations/data/location_repository.dart';
 import '../data/episode_repository.dart';
 import '../domain/episode_models.dart';
 import 'episode_details_page.dart';
@@ -10,12 +12,18 @@ import 'widgets/empty_error_state.dart';
 class EpisodesPage extends StatefulWidget {
   const EpisodesPage({
     required this.episodeRepository,
+    required this.characterRepository,
+    required this.locationRepository,
     required this.searchQuery,
+    required this.filters,
     super.key,
   });
 
   final EpisodeRepository episodeRepository;
+  final CharacterRepository characterRepository;
+  final LocationRepository locationRepository;
   final String searchQuery;
+  final Map<String, String> filters;
 
   @override
   State<EpisodesPage> createState() => _EpisodesPageState();
@@ -67,15 +75,33 @@ class _EpisodesPageState extends State<EpisodesPage> {
         }
 
         final query = widget.searchQuery.toLowerCase();
-        final filteredEpisodes =
-            query.isEmpty
+        final episodeFilter = widget.filters['episode'] ?? '';
+        final filteredEpisodes = (query.isEmpty
                 ? _controller.episodes
                 : _controller.episodes
                     .where((episode) {
-                      return episode.name.toLowerCase().contains(query) ||
+                      final matchesName =
+                          episode.name.toLowerCase().contains(query) ||
                           episode.code.toLowerCase().contains(query);
+                      final matchesCode = episode.code.toLowerCase().contains(
+                        episodeFilter,
+                      );
+                      return matchesName && matchesCode;
                     })
-                    .toList(growable: false);
+                    .toList(growable: false))
+            .toList(growable: true);
+        final sortBy = widget.filters['sortBy'] ?? 'episode';
+        final descending = widget.filters['order'] == 'desc';
+        filteredEpisodes.sort((left, right) {
+          final result = switch (sortBy) {
+            'name' => left.name.toLowerCase().compareTo(
+              right.name.toLowerCase(),
+            ),
+            'airDate' => left.airDate.compareTo(right.airDate),
+            _ => left.code.compareTo(right.code),
+          };
+          return descending ? -result : result;
+        });
 
         return RefreshIndicator(
           onRefresh: _controller.loadAll,
@@ -110,6 +136,8 @@ class _EpisodesPageState extends State<EpisodesPage> {
             (_) => EpisodeDetailsPage(
               episode: episode,
               episodeRepository: widget.episodeRepository,
+              characterRepository: widget.characterRepository,
+              locationRepository: widget.locationRepository,
             ),
       ),
     );

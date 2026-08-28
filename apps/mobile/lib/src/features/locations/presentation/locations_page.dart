@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../core/ui/display_value.dart';
+import '../../characters/data/character_repository.dart';
+import '../../episodes/data/episode_repository.dart';
 import '../../episodes/presentation/widgets/empty_error_state.dart';
 import '../data/location_repository.dart';
 import '../domain/location_models.dart';
@@ -11,12 +14,18 @@ import 'locations_controller.dart';
 class LocationsPage extends StatefulWidget {
   const LocationsPage({
     required this.locationRepository,
+    required this.characterRepository,
+    required this.episodeRepository,
     required this.searchQuery,
+    required this.filters,
     super.key,
   });
 
   final LocationRepository locationRepository;
+  final CharacterRepository characterRepository;
+  final EpisodeRepository episodeRepository;
   final String searchQuery;
+  final Map<String, String> filters;
 
   @override
   State<LocationsPage> createState() => _LocationsPageState();
@@ -68,22 +77,40 @@ class _LocationsPageState extends State<LocationsPage> {
         }
 
         final normalizedQuery = widget.searchQuery.toLowerCase();
-        final filteredLocations =
-            normalizedQuery.isEmpty
+        final typeFilter = widget.filters['type'] ?? '';
+        final dimensionFilter = widget.filters['dimension'] ?? '';
+        final filteredLocations = (normalizedQuery.isEmpty
                 ? _controller.locations
                 : _controller.locations
                     .where((location) {
-                      return location.name.toLowerCase().contains(
-                            normalizedQuery,
-                          ) ||
-                          location.type.toLowerCase().contains(
-                            normalizedQuery,
-                          ) ||
-                          location.dimension.toLowerCase().contains(
-                            normalizedQuery,
-                          );
+                      final matchesName = location.name.toLowerCase().contains(
+                        normalizedQuery,
+                      );
+                      final matchesType = location.type.toLowerCase().contains(
+                        typeFilter,
+                      );
+                      final matchesDimension = location.dimension
+                          .toLowerCase()
+                          .contains(dimensionFilter);
+                      return matchesName && matchesType && matchesDimension;
                     })
-                    .toList(growable: false);
+                    .toList(growable: false))
+            .toList(growable: true);
+        final sortBy = widget.filters['sortBy'] ?? 'name';
+        final descending = widget.filters['order'] == 'desc';
+        filteredLocations.sort((left, right) {
+          final result = switch (sortBy) {
+            'type' => left.type.toLowerCase().compareTo(
+              right.type.toLowerCase(),
+            ),
+            'dimension' => left.dimension.toLowerCase().compareTo(
+              right.dimension.toLowerCase(),
+            ),
+            'residents' => left.residentCount.compareTo(right.residentCount),
+            _ => left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+          };
+          return descending ? -result : result;
+        });
 
         return RefreshIndicator(
           onRefresh: _controller.load,
@@ -121,6 +148,8 @@ class _LocationsPageState extends State<LocationsPage> {
             (_) => LocationDetailsPage(
               location: location,
               locationRepository: widget.locationRepository,
+              characterRepository: widget.characterRepository,
+              episodeRepository: widget.episodeRepository,
             ),
       ),
     );
@@ -226,13 +255,13 @@ class _LocationListCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        location.type,
+                        displayValue(location.type),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${location.dimension} • ${location.residentCount} residentes',
+                        '${displayValue(location.dimension)} • ${location.residentCount} residentes',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,

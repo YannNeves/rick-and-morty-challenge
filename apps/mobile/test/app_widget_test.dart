@@ -144,6 +144,15 @@ void main() {
     expect(find.text('Busque por personagem'), findsOneWidget);
     expect(find.byKey(const ValueKey('characters-page-list')), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('open-filters-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Status'), findsWidgets);
+    expect(find.text('Gênero'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Limpar filtros'));
+    await tester.pumpAndSettle();
+
     await tester.enterText(
       find.byKey(const ValueKey('global-search-field')),
       'Rick',
@@ -152,14 +161,31 @@ void main() {
 
     expect(find.text('Rick Sanchez'), findsOneWidget);
 
-    await tester.tap(find.text('Rick Sanchez'));
+    final rickCardTitle = find.text('Rick Sanchez');
+    await tester.ensureVisible(rickCardTitle);
+    await tester.pumpAndSettle();
+    await tester.tap(rickCardTitle);
     await tester.pumpAndSettle();
 
     expect(
       find.byKey(const ValueKey('character-details-page')),
       findsOneWidget,
     );
+    final characterDetailsScroll = find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable && widget.axisDirection == AxisDirection.down,
+    );
+    await tester.scrollUntilVisible(
+      find.text('Localizações'),
+      300,
+      scrollable: characterDetailsScroll,
+    );
     expect(find.text('Localizações'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Episódios'),
+      300,
+      scrollable: characterDetailsScroll,
+    );
     expect(find.text('Episódios'), findsOneWidget);
 
     await tester.pageBack();
@@ -225,27 +251,40 @@ class FakeCharacterRepository implements CharacterRepository {
   }
 
   @override
-  Future<CharacterListPage> getCharacters({int page = 1}) async {
+  Future<CharacterListPage> getCharacters({
+    int page = 1,
+    String? name,
+    String? status,
+    String? species,
+    String? type,
+    String? gender,
+  }) async {
+    final matchesName =
+        name == null ||
+        'Rick Sanchez'.toLowerCase().contains(name.toLowerCase());
     return CharacterListPage(
       page: page,
       totalPages: 1,
       totalItems: 1,
       hasNextPage: false,
       hasPreviousPage: false,
-      characters: const [
-        CharacterSummary(
-          id: 1,
-          name: 'Rick Sanchez',
-          status: 'Alive',
-          species: 'Human',
-          type: '',
-          gender: 'Male',
-          image: 'https://example.com/rick.png',
-          origin: 'Earth (C-137)',
-          location: 'Citadel of Ricks',
-          episodeCount: 51,
-        ),
-      ],
+      characters:
+          matchesName
+              ? const [
+                CharacterSummary(
+                  id: 1,
+                  name: 'Rick Sanchez',
+                  status: 'Alive',
+                  species: 'Human',
+                  type: '',
+                  gender: 'Male',
+                  image: 'https://example.com/rick.png',
+                  origin: 'Earth (C-137)',
+                  location: 'Citadel of Ricks',
+                  episodeCount: 51,
+                ),
+              ]
+              : const [],
     );
   }
 }
@@ -349,6 +388,7 @@ class FakeEpisodeRepository implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     throw UnimplementedError();
   }

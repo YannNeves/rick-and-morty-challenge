@@ -73,7 +73,14 @@ class _CharacterRepositoryStub implements CharacterRepository {
   }
 
   @override
-  Future<CharacterListPage> getCharacters({int page = 1}) async {
+  Future<CharacterListPage> getCharacters({
+    int page = 1,
+    String? name,
+    String? status,
+    String? species,
+    String? type,
+    String? gender,
+  }) async {
     final characters = List.generate(12, (index) {
       final letter = String.fromCharCode('L'.codeUnitAt(0) - index);
       return CharacterSummary(
@@ -152,6 +159,7 @@ class _EpisodeRepositoryStub implements EpisodeRepository {
   Future<EpisodeDetails> getEpisodeDetails(
     int episodeId, {
     CharacterSortBy sortBy = CharacterSortBy.name,
+    CharacterSortOrder order = CharacterSortOrder.ascending,
   }) async {
     throw UnimplementedError();
   }

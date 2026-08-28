@@ -5,6 +5,7 @@ import 'app_destination.dart';
 import 'app_shell_view_model.dart';
 import 'widgets/app_header.dart';
 import 'widgets/app_search_bar.dart';
+import 'widgets/app_filters_drawer.dart';
 import 'widgets/animated_bottom_navigation.dart';
 import '../../features/characters/data/character_repository.dart';
 import '../../features/characters/presentation/characters_page.dart';
@@ -41,6 +42,8 @@ class AppShell extends StatelessWidget {
               initialValue: viewModel.searchQuery,
               hintText: destination.searchHint,
               onChanged: viewModel.updateSearchQuery,
+              hasActiveFilters: viewModel.filtersFor(destination).isNotEmpty,
+              onFilterPressed: () => _openFilters(context, destination),
             ),
           Expanded(child: _buildDestination(context, destination)),
         ],
@@ -73,14 +76,20 @@ class AppShell extends StatelessWidget {
     if (destination == AppDestination.locations) {
       return LocationsPage(
         locationRepository: locationRepository,
+        characterRepository: characterRepository,
+        episodeRepository: episodeRepository,
         searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
       );
     }
 
     if (destination == AppDestination.episodes) {
       return EpisodesPage(
         episodeRepository: episodeRepository,
+        characterRepository: characterRepository,
+        locationRepository: locationRepository,
         searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
       );
     }
 
@@ -90,6 +99,7 @@ class AppShell extends StatelessWidget {
         episodeRepository: episodeRepository,
         locationRepository: locationRepository,
         searchQuery: viewModel.searchQuery,
+        filters: viewModel.filtersFor(destination),
       );
     }
 
@@ -105,5 +115,17 @@ class AppShell extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openFilters(
+    BuildContext context,
+    AppDestination destination,
+  ) async {
+    final filters = await showAppFiltersDrawer(
+      context,
+      destination: destination,
+      initialFilters: viewModel.filtersFor(destination),
+    );
+    if (filters != null) viewModel.updateFilters(destination, filters);
   }
 }
