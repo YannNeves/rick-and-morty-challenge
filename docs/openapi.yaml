@@ -42,6 +42,21 @@ paths:
           description: Character page
         "400":
           description: Invalid pagination or enum filter
+  /characters/batch:
+    get:
+      summary: Get multiple characters
+      parameters:
+        - in: query
+          name: ids
+          required: true
+          schema:
+            type: string
+            example: "1,183"
+      responses:
+        "200":
+          description: Ordered character collection
+        "400":
+          description: Invalid or oversized id list
   /characters/{id}:
     get:
       summary: Get character details

@@ -31,6 +31,15 @@ episódios sem expor URLs da API upstream.
 curl "http://localhost:3000/api/v1/characters/2"
 ```
 
+## `GET /characters/batch`
+
+Retorna até 100 personagens por chamada. `ids` é obrigatório, aceita somente
+inteiros positivos e remove duplicidades preservando a ordem solicitada.
+
+```bash
+curl "http://localhost:3000/api/v1/characters/batch?ids=1,183"
+```
+
 ## `GET /episodes`
 
 Lista episodios paginados.

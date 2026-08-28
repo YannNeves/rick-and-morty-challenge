@@ -34,3 +34,5 @@ export type CharacterDetails = Omit<
   episodeCount: number;
   episodeIds: number[];
 };
+
+export const CHARACTER_BATCH_LIMIT = 100;

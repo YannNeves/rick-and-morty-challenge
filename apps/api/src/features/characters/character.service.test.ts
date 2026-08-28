@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { AppError } from "../../errors/app-error.js";
 import type {
   CharacterListFilters,
   CharactersGateway,
@@ -40,6 +41,13 @@ class FakeGateway implements CharactersGateway {
   async getCharacter(): Promise<RickAndMortyCharacter> {
     return character;
   }
+
+  async getCharacters(): Promise<RickAndMortyCharacter[]> {
+    return [
+      { ...character, id: 2, name: "Morty Smith" },
+      character
+    ];
+  }
 }
 
 test("listCharacters maps pagination and character summaries", async () => {
@@ -70,6 +78,28 @@ test("listCharacters maps pagination and character summaries", async () => {
     location: "Citadel of Ricks",
     episodeCount: 2
   });
+});
+
+test("getCharactersBatch preserves requested order", async () => {
+  const service = new CharacterService(new FakeGateway());
+
+  const result = await service.getCharactersBatch([1, 2, 1]);
+
+  assert.deepEqual(
+    result.map((item) => item.id),
+    [1, 2]
+  );
+});
+
+test("getCharactersBatch rejects invalid and oversized lists", async () => {
+  const service = new CharacterService(new FakeGateway());
+
+  await assert.rejects(service.getCharactersBatch([]), AppError);
+  await assert.rejects(service.getCharactersBatch([0]), AppError);
+  await assert.rejects(
+    service.getCharactersBatch(Array.from({ length: 101 }, (_, index) => index + 1)),
+    AppError
+  );
 });
 
 test("getCharacterDetails maps relation and episode ids", async () => {

@@ -166,3 +166,31 @@ test("client gets a single character by id", async () => {
   assert.equal((await client.getCharacter(2)).name, "Morty Smith");
   assert.equal(new URL(requestedUrl).pathname, "/api/character/2");
 });
+
+test("client normalizes single and multiple character responses", async () => {
+  const responseBody = {
+    id: 1,
+    name: "Rick Sanchez",
+    status: "Alive",
+    species: "Human",
+    type: "",
+    gender: "Male",
+    origin: { name: "Earth", url: "" },
+    location: { name: "Earth", url: "" },
+    image: "",
+    episode: [],
+    url: "",
+    created: ""
+  };
+  const client = new RickAndMortyHttpClient({
+    baseUrl: "https://example.com/api",
+    timeoutMs: 100,
+    cacheTtlMs: 1_000,
+    fetchFn: async () => jsonResponse(responseBody)
+  });
+
+  assert.deepEqual(
+    (await client.getCharacters([1])).map((item) => item.id),
+    [1]
+  );
+});

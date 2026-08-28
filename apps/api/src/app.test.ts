@@ -192,3 +192,28 @@ test("GET /api/v1/characters/:id rejects invalid ids", async () => {
     assert.equal(body.error.code, "BAD_REQUEST");
   });
 });
+
+test("GET /api/v1/characters/batch returns deduplicated characters", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/characters/batch?ids=1,1`);
+    const body = (await response.json()) as {
+      characters: Array<{ id: number; name: string }>;
+    };
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      body.characters.map((character) => character.id),
+      [1]
+    );
+  });
+});
+
+test("GET /api/v1/characters/batch rejects invalid lists", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/characters/batch?ids=1,zero`);
+    const body = (await response.json()) as { error: { code: string } };
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error.code, "BAD_REQUEST");
+  });
+});

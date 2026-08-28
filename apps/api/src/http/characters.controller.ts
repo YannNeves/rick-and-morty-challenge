@@ -1,9 +1,11 @@
 import type { Request, Response } from "express";
 
 import type { CharacterService } from "../features/characters/character.service.js";
+import { CHARACTER_BATCH_LIMIT } from "../features/characters/character.models.js";
 import {
   parseCharacterGender,
   parseCharacterStatus,
+  parseIdList,
   parseOptionalString,
   parsePositiveInt
 } from "./query-parsers.js";
@@ -33,5 +35,12 @@ export class CharactersController {
   details = async (req: Request, res: Response): Promise<void> => {
     const id = parsePositiveInt(req.params.id, "id");
     res.json(await this.characterService.getCharacterDetails(id));
+  };
+
+  batch = async (req: Request, res: Response): Promise<void> => {
+    const ids = parseIdList(req.query.ids, "ids", CHARACTER_BATCH_LIMIT);
+    res.json({
+      characters: await this.characterService.getCharactersBatch(ids)
+    });
   };
 }
