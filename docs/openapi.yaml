@@ -101,6 +101,23 @@ paths:
           description: Location page
         "400":
           description: Invalid pagination
+  /locations/{id}:
+    get:
+      summary: Get location details with sorted residents
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Location details with residents sorted by name
+        "400":
+          description: Invalid location id
+        "404":
+          description: Location not found
   /episodes:
     get:
       summary: List episodes

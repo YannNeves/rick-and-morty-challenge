@@ -2,14 +2,15 @@ import { Router } from "express";
 
 import { asyncHandler } from "../../../presentation/http/async-handler.js";
 import { LocationService } from "../application/location.service.js";
-import type { LocationsGateway } from "../application/locations.gateway.js";
+import type { LocationCharactersGateway, LocationsGateway } from "../application/locations.gateway.js";
 import { LocationsController } from "./locations.controller.js";
 
-export const createLocationsRouter = (gateway: LocationsGateway): Router => {
+export const createLocationsRouter = (gateway: LocationsGateway & LocationCharactersGateway): Router => {
   const router = Router();
-  const controller = new LocationsController(new LocationService(gateway));
+  const controller = new LocationsController(new LocationService(gateway, gateway));
 
   router.get("/", asyncHandler(controller.list));
+  router.get("/:id", asyncHandler(controller.details));
 
   return router;
 };

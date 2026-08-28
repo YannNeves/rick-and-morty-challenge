@@ -22,7 +22,7 @@ import type {
 import { toCharacterDetails, toCharacterSummary } from "./character.mapper.js";
 import { toEpisode } from "./episode.mapper.js";
 import type { LocationsGateway } from "../../modules/locations/application/locations.gateway.js";
-import type { LocationListFilters, LocationPage } from "../../modules/locations/domain/location.models.js";
+import type { Location, LocationListFilters, LocationPage } from "../../modules/locations/domain/location.models.js";
 import { toLocation } from "./location.mapper.js";
 import { resolveApiUrl } from "./url-utils.js";
 
@@ -132,6 +132,10 @@ export class RickAndMortyHttpClient implements EpisodesGateway, CharactersGatewa
     return toCharacterDetails(
       await this.getJson<RickAndMortyCharacter>(`/character/${id}`)
     );
+  }
+
+  async getLocation(id: number): Promise<Location> {
+    return toLocation(await this.getJson<RickAndMortyLocation>(`/location/${id}`));
   }
 
   async getEpisode(id: number): Promise<Episode> {
